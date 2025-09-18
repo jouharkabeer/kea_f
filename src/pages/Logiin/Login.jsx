@@ -52,12 +52,12 @@ function Login() {
       <h2>Login</h2>
       <form onSubmit={handleSubmit} className="login-form">
         
-        <label>Email or Phone:</label>
+        <label>Email:</label>
         <input
           type="text"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
-          placeholder="Enter your email or phone"
+          placeholder="Enter your email"
         />
 
         <label>Password:</label>
