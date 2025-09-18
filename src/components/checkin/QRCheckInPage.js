@@ -80,7 +80,7 @@ const QRCheckInPage = () => {
               setPermissionStatus(result.state);
             });
           })
-          .catch(err => // console.log('Permission query not supported:', err.name));
+          .catch(err =>  console.log('Permission query not supported:', err.name));
       }
     };
 

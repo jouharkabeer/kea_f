@@ -164,12 +164,12 @@ export const useNotification = () => {
     console.error('useNotification must be used within a NotificationProvider');
     // Return safe fallback functions instead of throwing
     return {
-      success: (msg) => // console.log('SUCCESS (fallback):', msg),
+      success: (msg) =>  console.log('SUCCESS (fallback):', msg),
       error: (msg) => console.error('ERROR (fallback):', msg),
-      info: (msg) => // console.log('INFO (fallback):', msg),
+      info: (msg) =>  console.log('INFO (fallback):', msg),
       warning: (msg) => console.warn('WARNING (fallback):', msg),
       notifications: [],
-      showNotification: (msg) => // console.log('NOTIFICATION (fallback):', msg),
+      showNotification: (msg) =>  console.log('NOTIFICATION (fallback):', msg),
       removeNotification: () => {}
     };
   }

@@ -62,9 +62,9 @@ export default function Navbar() {
       setToken(storedToken);
       
       // console.log('Auth state updated:', { 
-        hasUser: !!storedUser, 
-        hasToken: !!storedToken 
-      });
+      //   hasUser: !!storedUser, 
+      //   hasToken: !!storedToken 
+      // });
     } catch (error) {
       console.error('Error updating auth state:', error);
       setUser(null);

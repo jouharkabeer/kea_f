@@ -33,9 +33,9 @@ export const StepOne = ({
   const { success, error, info, warning } = notificationContext || {};
   
   // Create fallback functions if notification context is not available
-  const safeSuccess = success || ((msg) => // console.log('SUCCESS:', msg));
+  const safeSuccess = success || ((msg) => console.log('SUCCESS:', msg));
   const safeError = error || ((msg) => console.error('ERROR:', msg));
-  const safeInfo = info || ((msg) => // console.log('INFO:', msg));
+  const safeInfo = info || ((msg) => console.log('INFO:', msg));
   const safeWarning = warning || ((msg) => console.warn('WARNING:', msg));
   
   // Update preview when formData changes
