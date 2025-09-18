@@ -28,7 +28,10 @@ const QRCheckInAdmin = () => {
   const loadEvents = async () => {
     try {
       const response = await getEventsList();
-      setEvents(response);
+      const normalized = Array.isArray(response)
+        ? response
+        : (response?.results || response?.events || []);
+      setEvents(normalized);
     } catch (error) {
       console.error('Error loading events:', error);
       setMessage({ type: 'error', text: 'Failed to load events' });

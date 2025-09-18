@@ -47,7 +47,7 @@ const UserProfileEditor = () => {
   const fetchUserProfile = async () => {
     try {
       setFetchingProfile(true);
-      info('Loading your profile information...');
+
       const response = await getUserProfile();
       
       if (response) {
@@ -70,11 +70,11 @@ const UserProfileEditor = () => {
 
         if (response.profile_picture_url) {
           setPreviewImage(response.profile_picture_url);
-          info('Profile picture loaded successfully');
+   
         } else {
           setPreviewImage(null);
         }
-        success('Profile information loaded successfully');
+ 
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -209,7 +209,7 @@ const UserProfileEditor = () => {
       if (response) {
         setSuccessMessage(response.message || 'Profile updated successfully!');
         success(response.message || 'Profile updated successfully!');
-        info('Refreshing profile data...');
+ 
         await fetchUserProfile();
         
         // Dispatch event to update navbar

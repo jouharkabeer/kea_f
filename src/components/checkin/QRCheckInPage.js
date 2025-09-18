@@ -283,7 +283,11 @@ const QRCheckInPage = () => {
     try {
       setLoading(true);
       const response = await getEventsList();
-      setEvents(response);
+      // Normalize to array in case API returns wrapped data
+      const normalized = Array.isArray(response)
+        ? response
+        : (response?.results || response?.events || []);
+      setEvents(normalized);
     } catch (error) {
       console.error('Error loading events:', error);
       showMessage('error', 'Failed to load events. Please check your connection.');
@@ -456,7 +460,9 @@ const QRCheckInPage = () => {
     }
   };
 
-  const selectedEventData = events.find(event => event.event_id === selectedEvent);
+  const selectedEventData = Array.isArray(events)
+    ? events.find(event => String(event.event_id) === String(selectedEvent))
+    : null;
 
   return (
     <div className="qr-checkin-page">
