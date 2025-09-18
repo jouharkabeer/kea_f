@@ -80,7 +80,7 @@ const QRCheckInPage = () => {
               setPermissionStatus(result.state);
             });
           })
-          .catch(err => console.log('Permission query not supported:', err.name));
+          .catch(err => // console.log('Permission query not supported:', err.name));
       }
     };
 
@@ -96,7 +96,7 @@ const QRCheckInPage = () => {
     }
 
     try {
-      console.log('Initializing QR Scanner...');
+      // console.log('Initializing QR Scanner...');
       
       if (!QrScanner.hasCamera()) {
         throw new Error('No camera found on this device');
@@ -105,7 +105,7 @@ const QRCheckInPage = () => {
       qrScannerRef.current = new QrScanner(
         videoRef.current,
         (result) => {
-          console.log('QR Code detected:', result.data);
+          // console.log('QR Code detected:', result.data);
           handleQRCodeDetected(result.data);
         },
         {
@@ -142,7 +142,7 @@ const QRCheckInPage = () => {
 
   // Handle QR code detection
   const handleQRCodeDetected = async (qrData) => {
-    console.log('QR Data detected:', qrData);
+    // console.log('QR Data detected:', qrData);
     
     try {
       let userId = '';
@@ -239,7 +239,7 @@ const QRCheckInPage = () => {
       qrScannerRef.current.destroy();
       qrScannerRef.current = null;
       setIsScanning(false);
-      console.log('QR Scanner stopped');
+      // console.log('QR Scanner stopped');
     }
   };
 
@@ -254,7 +254,7 @@ const QRCheckInPage = () => {
   useEffect(() => {
     return () => {
       stopQRScanner();
-      console.log('Component unmount: QR scanner cleaned up');
+      // console.log('Component unmount: QR scanner cleaned up');
     };
   }, []);
 
@@ -262,9 +262,9 @@ const QRCheckInPage = () => {
     const handleVisibilityChange = () => {
       if (document.hidden && isScanning) {
         stopQRScanner();
-        console.log('Tab hidden, pausing QR scanner');
+        // console.log('Tab hidden, pausing QR scanner');
       } else if (!document.hidden && showCamera && !isScanning && videoRef.current) {
-        console.log('Tab visible, restarting QR scanner');
+        // console.log('Tab visible, restarting QR scanner');
         initializeQRScanner();
       }
     };

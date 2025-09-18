@@ -33,12 +33,12 @@ const EventsSection = () => {
       setError(null);
       
       try {
-        console.log('🔄 Fetching events...');
+        // console.log('🔄 Fetching events...');
         const eventsData = await getAllEvents();
         
-        console.log('📨 API Response:', eventsData);
-        console.log('📨 Response type:', typeof eventsData);
-        console.log('📨 Is array:', Array.isArray(eventsData));
+        // console.log('📨 API Response:', eventsData);
+        // console.log('📨 Response type:', typeof eventsData);
+        // console.log('📨 Is array:', Array.isArray(eventsData));
         
         // Handle different API response formats
         let eventsList = [];
@@ -60,7 +60,7 @@ const EventsSection = () => {
           eventsList = [];
         }
         
-        console.log(`✅ Processed ${eventsList.length} events successfully`);
+        // console.log(`✅ Processed ${eventsList.length} events successfully`);
         setAllEvents(eventsList);
         
       } catch (error) {

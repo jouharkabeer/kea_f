@@ -27,7 +27,7 @@ const PasswordReset = () => {
         return;
       }
       
-      console.log('🔍 Starting token validation...');
+      // console.log('🔍 Starting token validation...');
       info('Validating your reset link...');
       
       try {

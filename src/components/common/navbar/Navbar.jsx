@@ -61,7 +61,7 @@ export default function Navbar() {
       setUser(storedUser ? JSON.parse(storedUser) : null);
       setToken(storedToken);
       
-      console.log('Auth state updated:', { 
+      // console.log('Auth state updated:', { 
         hasUser: !!storedUser, 
         hasToken: !!storedToken 
       });
@@ -102,7 +102,7 @@ export default function Navbar() {
   // ✅ FIXED: Correct authentication logic
   const isAuth = useMemo(() => {
     const isAuthenticated = !!(token && user);
-    console.log('isAuth calculated:', { token: !!token, user: !!user, isAuthenticated });
+    // console.log('isAuth calculated:', { token: !!token, user: !!user, isAuthenticated });
     return isAuthenticated;
   }, [token, user]);
 

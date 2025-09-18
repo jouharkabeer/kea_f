@@ -52,7 +52,7 @@ const ForgotPassword = () => {
       const data = await forgotPassword(email.trim().toLowerCase());
       setIsSubmitted(true);
       success('Password reset email sent successfully! Check your inbox.');
-      console.log('✅ Password reset email sent successfully');
+      // console.log('✅ Password reset email sent successfully');
     } catch (err) {
       console.error('❌ Request error:', err);
       // Handle specific error messages from backend
@@ -83,7 +83,7 @@ const ForgotPassword = () => {
       // Use the AuthApi forgotPassword function
       await forgotPassword(email.trim().toLowerCase());
       success('Password reset email resent successfully!');
-      console.log('✅ Password reset email resent successfully');
+      // console.log('✅ Password reset email resent successfully');
     } catch (err) {
       console.error('❌ Request error:', err);
       if (err.message) {

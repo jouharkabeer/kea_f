@@ -15,7 +15,7 @@ export const sendOTP = async (phoneNumber) => {
     }, {
       headers: combineHeaders()
     });
-    console.log(API_ENDPOINTS.AUTH.SEND_OTP)
+    // console.log(API_ENDPOINTS.AUTH.SEND_OTP)
     return response.data;
   } catch (error) {
     throw error.response?.data || error;

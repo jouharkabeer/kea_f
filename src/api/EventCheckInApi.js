@@ -27,7 +27,7 @@ const getAuthHeaders = () => {
  */
 export const scanQRForEventCheckIn = async (qrData, eventId) => {
   try {
-    console.log("Sending scan request:", { qrData: qrData.substring(0, 30) + "...", eventId });
+    // console.log("Sending scan request:", { qrData: qrData.substring(0, 30) + "...", eventId });
     
     const response = await fetch('/api/events/scan-qr/', {
       method: 'POST',
@@ -48,7 +48,7 @@ export const scanQRForEventCheckIn = async (qrData, eventId) => {
     }
     
     const result = await response.json();
-    console.log("API success response:", result);
+    // console.log("API success response:", result);
     return result;
   } catch (error) {
     console.error('API call error:', error);

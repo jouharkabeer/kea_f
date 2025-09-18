@@ -23,7 +23,7 @@ import axios from 'axios';
 // };
 export const createRazorpayOrder = async (userId) => {
   try {
-    console.log('Creating Razorpay order for user ID:', userId);
+    // console.log('Creating Razorpay order for user ID:', userId);
     
     const response = await axios.post(API_ENDPOINTS.PAYMENT.CREATE_RAZORPAY_ORDER, {
       user_id: userId
@@ -31,7 +31,7 @@ export const createRazorpayOrder = async (userId) => {
       headers: combineHeaders()
     });
     
-    console.log('Razorpay order created:', response.data);
+    // console.log('Razorpay order created:', response.data);
     
     // Ensure user_id is included in the response
     return {
@@ -52,7 +52,7 @@ export const createRazorpayOrder = async (userId) => {
  * @returns {Promise<Object>} - Verification result
  */
 export const verifyPayment = async (paymentResponse) => {
-  console.log('Verifying payment with data:', paymentResponse);
+  // console.log('Verifying payment with data:', paymentResponse);
   
   // Validate required fields
   if (!paymentResponse?.razorpay_payment_id || 
@@ -63,7 +63,7 @@ export const verifyPayment = async (paymentResponse) => {
   }
 
   try {
-    console.log('Sending verification request to:', API_ENDPOINTS.PAYMENT.VERIFY_PAYMENT);
+    // console.log('Sending verification request to:', API_ENDPOINTS.PAYMENT.VERIFY_PAYMENT);
     
     const response = await axios.post(
       API_ENDPOINTS.PAYMENT.VERIFY_PAYMENT, 
@@ -77,7 +77,7 @@ export const verifyPayment = async (paymentResponse) => {
       }
     );
     
-    console.log('Verification response:', response.data);
+    // console.log('Verification response:', response.data);
     
     // Make sure to include user_id in the response if it was in the request
     if (paymentResponse.user_id && !response.data.user_id) {
@@ -102,7 +102,7 @@ export const verifyPayment = async (paymentResponse) => {
  * @param {Function} onError - Callback function on payment failure
  */
 export const initiateRazorpayCheckout = (orderData, userInfo, onSuccess, onError) => {
-  console.log('Initiating Razorpay checkout with order data:', orderData);
+  // console.log('Initiating Razorpay checkout with order data:', orderData);
   
   const options = {
     key: orderData.razorpay_key,
@@ -118,7 +118,7 @@ export const initiateRazorpayCheckout = (orderData, userInfo, onSuccess, onError
         user_id: orderData.user_id, // Important: Pass user_id to verification
         order_id: orderData.order_id
       };
-      console.log('Payment successful, data for verification:', paymentData);
+      // console.log('Payment successful, data for verification:', paymentData);
       if (onSuccess) onSuccess(paymentData);
     },
     prefill: {

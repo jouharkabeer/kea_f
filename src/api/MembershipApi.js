@@ -35,19 +35,19 @@ const getAuthHeaders = () => {
  */
 export const getUserDetails = async (userId) => {
   try {
-    console.log('🔍 BASE_URL:', BASE_URL);
-    console.log('🔍 Getting user details for:', userId);
+    // console.log('🔍 BASE_URL:', BASE_URL);
+    // console.log('🔍 Getting user details for:', userId);
     
     // FIXED: Use cleanUrl to construct proper URL
     const url = cleanUrl(BASE_URL, '/auth/userdetail/');
-    console.log('🔗 Constructed URL:', url);
+    // console.log('🔗 Constructed URL:', url);
     
     const response = await axios.get(url, {
       params: { user_id: userId },
       headers: getAuthHeaders()
     });
     
-    console.log('✅ User details fetched successfully');
+    // console.log('✅ User details fetched successfully');
     return response.data;
   } catch (error) {
     console.error('❌ Error fetching user details:', error);
@@ -62,7 +62,7 @@ export const getUserDetails = async (userId) => {
  */
 export const generateMembershipCard = async (userId) => {
   try {
-    console.log('Generating membership card for user ID:', userId);
+    // console.log('Generating membership card for user ID:', userId);
     
     // Basic validation
     if (!userId) {
@@ -73,7 +73,7 @@ export const generateMembershipCard = async (userId) => {
     
     // FIXED: Use cleanUrl to prevent double slashes
     const url = cleanUrl(BASE_URL, '/auth/generate-membership-card/');
-    console.log('🔗 Generate card URL:', url);
+    // console.log('🔗 Generate card URL:', url);
     
     const response = await axios.post(
       url,
@@ -84,7 +84,7 @@ export const generateMembershipCard = async (userId) => {
       }
     );
     
-    console.log('Membership card generated successfully:', response.data);
+    // console.log('Membership card generated successfully:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error generating membership card:', error);
@@ -106,7 +106,7 @@ export const generateMembershipCard = async (userId) => {
  */
 export const regenerateMembershipCard = async (userId, onProgress) => {
   try {
-    console.log('🔄 Regenerating membership card for user:', userId);
+    // console.log('🔄 Regenerating membership card for user:', userId);
     
     // Call progress callback if provided
     if (onProgress) {
@@ -115,7 +115,7 @@ export const regenerateMembershipCard = async (userId, onProgress) => {
     
     // FIXED: Use cleanUrl to prevent double slashes
     const url = cleanUrl(BASE_URL, '/auth/regenerate-membership-card/');
-    console.log('🔗 Regenerate card URL:', url);
+    // console.log('🔗 Regenerate card URL:', url);
     
     const response = await axios.post(
       url,
@@ -146,7 +146,7 @@ export const regenerateMembershipCard = async (userId, onProgress) => {
       }
     );
 
-    console.log('✅ Membership card regenerated successfully');
+    // console.log('✅ Membership card regenerated successfully');
     return response.data;
     
   } catch (error) {
@@ -179,7 +179,7 @@ export const sendMembershipCardEmail = async (userId) => {
   try {
     // FIXED: Use cleanUrl to prevent double slashes
     const url = cleanUrl(BASE_URL, '/auth/send-membership-card-email/');
-    console.log('🔗 Send email URL:', url);
+    // console.log('🔗 Send email URL:', url);
     
     const response = await axios.post(
       url,
@@ -201,7 +201,7 @@ export const sendMembershipCardEmail = async (userId) => {
 export const getMembershipCardViewUrl = (userId) => {
   // FIXED: Use cleanUrl to prevent double slashes
   const url = cleanUrl(BASE_URL, `auth/view-card/${userId}/`);
-  console.log('🔗 View card URL:', url);
+  // console.log('🔗 View card URL:', url);
   return url;
 };
 
@@ -218,7 +218,7 @@ export const getMembershipCardDownloadUrl = (userId) => {
   const timestamp = Date.now(); // Add timestamp to prevent caching
   
   const url = cleanUrl(baseUrl, `/auth/download-membership-card/${userId}/?t=${timestamp}`);
-  console.log('🔗 Download card URL:', url);
+  // console.log('🔗 Download card URL:', url);
   return url;
 };
 
@@ -230,7 +230,7 @@ export const getMembershipCardDownloadUrl = (userId) => {
 export const downloadMembershipCard = async (userId) => {
   try {
     const downloadUrl = getMembershipCardDownloadUrl(userId);
-    console.log('🔗 Downloading from:', downloadUrl);
+    // console.log('🔗 Downloading from:', downloadUrl);
     
     const response = await axios.get(downloadUrl, {
       // headers: getAuthHeaders(), // Uncomment if auth is required
@@ -247,7 +247,7 @@ export const downloadMembershipCard = async (userId) => {
     link.remove();
     window.URL.revokeObjectURL(url);
     
-    console.log('✅ Membership card downloaded successfully');
+    // console.log('✅ Membership card downloaded successfully');
   } catch (error) {
     console.error('Error downloading membership card:', error);
     throw error;
@@ -256,13 +256,13 @@ export const downloadMembershipCard = async (userId) => {
 
 // BONUS: Add a debug function to test URL construction
 export const debugUrls = (userId = 'test-user-id') => {
-  console.log('=== URL DEBUG INFO ===');
-  console.log('BASE_URL:', BASE_URL);
-  console.log('Generate card:', cleanUrl(BASE_URL, '/auth/generate-membership-card/'));
-  console.log('View card:', cleanUrl(BASE_URL, `/auth/view-card/${userId}/`));
-  console.log('Download card:', cleanUrl(BASE_URL, `/auth/download-membership-card/${userId}/`));
-  console.log('User details:', cleanUrl(BASE_URL, '/auth/userdetail/'));
-  console.log('=====================');
+  // console.log('=== URL DEBUG INFO ===');
+  // console.log('BASE_URL:', BASE_URL);
+  // console.log('Generate card:', cleanUrl(BASE_URL, '/auth/generate-membership-card/'));
+  // console.log('View card:', cleanUrl(BASE_URL, `/auth/view-card/${userId}/`));
+  // console.log('Download card:', cleanUrl(BASE_URL, `/auth/download-membership-card/${userId}/`));
+  // console.log('User details:', cleanUrl(BASE_URL, '/auth/userdetail/'));
+  // console.log('=====================');
 };
 
 // Export all functions as a default object

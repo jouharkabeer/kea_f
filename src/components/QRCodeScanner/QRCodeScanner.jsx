@@ -130,11 +130,11 @@ function QRCodeScanner() {
 
       while (!stream && constraintIndex < constraints.length) {
         try {
-          console.log(`Trying camera constraint ${constraintIndex + 1}`);
+          // console.log(`Trying camera constraint ${constraintIndex + 1}`);
           stream = await navigator.mediaDevices.getUserMedia(constraints[constraintIndex]);
           break;
         } catch (err) {
-          console.log(`Constraint ${constraintIndex + 1} failed:`, err.message);
+          // console.log(`Constraint ${constraintIndex + 1} failed:`, err.message);
           constraintIndex++;
           if (constraintIndex >= constraints.length) {
             throw err;
@@ -155,11 +155,11 @@ function QRCodeScanner() {
         const video = videoRef.current;
         
         video.onloadedmetadata = () => {
-          console.log("Video metadata loaded");
+          // console.log("Video metadata loaded");
         };
 
         video.oncanplay = () => {
-          console.log("Video can play");
+          // console.log("Video can play");
           setCameraReady(true);
           setPermissionStatus("granted");
           setScanning(true);
@@ -175,7 +175,7 @@ function QRCodeScanner() {
         // Start playing
         try {
           await video.play();
-          console.log("Video started playing");
+          // console.log("Video started playing");
         } catch (playError) {
           console.error("Video play error:", playError);
           // Try to play again after a short delay
@@ -263,7 +263,7 @@ function QRCodeScanner() {
 
   const handleScan = (data) => {
     if (data && data.text) {
-      console.log("QR Code detected:", data.text);
+      // console.log("QR Code detected:", data.text);
       info("QR Code detected, processing...");
       
       // Extract user ID from QR code

@@ -26,7 +26,7 @@ function MultiStepRegister() {
   
   useEffect(() => {
     return () => {
-      console.log("MultiStepRegister unmounted");
+      // console.log("MultiStepRegister unmounted");
     };
   }, []);
   
@@ -108,7 +108,7 @@ function MultiStepRegister() {
     
     try {
       const data = await sendOTP(formData.contactNo);
-      console.log('OTP response:', data);
+      // console.log('OTP response:', data);
       
       if (data.verification_id) {
         setVerificationId(data.verification_id);
@@ -146,7 +146,7 @@ function MultiStepRegister() {
         payload.verification_id = verificationId;
       }
       
-      console.log('Verifying OTP with payload:', payload);
+      // console.log('Verifying OTP with payload:', payload);
       await verifyOTP(payload);
       
       setIsContactVerified(true);
@@ -258,7 +258,7 @@ function MultiStepRegister() {
 
   // Payment verification
   async function handlePaymentVerification(paymentResponse) {
-    console.log('Starting payment verification with:', paymentResponse);
+    // console.log('Starting payment verification with:', paymentResponse);
     setIsLoading(true);
     
     try {
@@ -267,14 +267,14 @@ function MultiStepRegister() {
         user_id: userId || paymentResponse.user_id
       };
       
-      console.log('Payment verification payload:', verificationPayload);
+      // console.log('Payment verification payload:', verificationPayload);
       
       const responseData = await verifyPayment(verificationPayload);
-      console.log('Payment verification successful:', responseData);
+      // console.log('Payment verification successful:', responseData);
       
       // Update user ID if needed
       if (responseData.user_id && !userId) {
-        console.log('Setting user ID from response:', responseData.user_id);
+        // console.log('Setting user ID from response:', responseData.user_id);
         setUserId(responseData.user_id);
       }
       
@@ -305,7 +305,7 @@ function MultiStepRegister() {
 
   // Payment initiation
   async function handleInitiatePayment(userId) {
-    console.log('Initiating payment for user:', userId);
+    // console.log('Initiating payment for user:', userId);
     setIsLoading(true);
     
     try {
@@ -314,7 +314,7 @@ function MultiStepRegister() {
       }
       
       const orderData = await createRazorpayOrder(userId);
-      console.log('Razorpay order created:', orderData);
+      // console.log('Razorpay order created:', orderData);
       
       if (!orderData || !orderData.order_id) {
         throw new Error('Invalid order data received from server');
@@ -334,7 +334,7 @@ function MultiStepRegister() {
         },
         // Success callback
         (response) => {
-          console.log('Razorpay checkout successful, verifying payment...', response);
+          // console.log('Razorpay checkout successful, verifying payment...', response);
           
           const verificationPayload = {
             ...response,
@@ -450,7 +450,7 @@ function MultiStepRegister() {
         responseData = await registerUser(payload);
       }
       
-      console.log('Registration successful:', responseData);
+      // console.log('Registration successful:', responseData);
       
       if (!responseData || !responseData.user_id) {
         throw { message: 'Registration failed: Invalid response from server.' };

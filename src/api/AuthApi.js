@@ -16,7 +16,7 @@ export const loginUser = async (identifier, password) => {
     }
 
     // For debugging: Log what's being sent (remove in production)
-    console.log('Login attempt with:', { identifier, password: '****' });
+    // // console.log('Login attempt with:', { identifier, password: '****' });
     
     const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
       method: 'POST',
@@ -32,12 +32,12 @@ export const loginUser = async (identifier, password) => {
     });
 
     // For debugging: Log response status (remove in production)
-    console.log('Login response status:', response.status);
+    // console.log('Login response status:', response.status);
 
     const data = await response.json();
 
     // For debugging: Log response data (remove sensitive info in production)
-    console.log('Login response data:', data);
+    // console.log('Login response data:', data);
 
     // If response is not ok, throw the error data for handling
     if (!response.ok) {
@@ -63,12 +63,12 @@ export const registerUser = async (userData) => {
     };
     if (userData instanceof FormData) {
       requestConfig.body = userData;
-      console.log('Sending FormData (with file upload)');
+      // console.log('Sending FormData (with file upload)');
     } else {
       // For regular JSON data
       requestConfig.headers = combineHeaders();
       requestConfig.body = JSON.stringify(userData);
-      console.log('Sending JSON data');
+      // console.log('Sending JSON data');
     }
 
     const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, requestConfig);
@@ -127,21 +127,21 @@ export const registerUser = async (userData) => {
  */
 export const getUserProfile = async () => {
   try {
-    console.log('Making request to:', API_ENDPOINTS.USER.PROFILE);
-    console.log('Headers:', combineHeaders());
+    // console.log('Making request to:', API_ENDPOINTS.USER.PROFILE);
+    // console.log('Headers:', combineHeaders());
     
     const response = await fetch(API_ENDPOINTS.USER.PROFILE, {
       method: 'GET',
       headers: combineHeaders(),
     });
 
-    console.log('Response status:', response.status);
-    console.log('Response headers:', response.headers);
-    console.log('Response URL:', response.url);
+    // console.log('Response status:', response.status);
+    // console.log('Response headers:', response.headers);
+    // console.log('Response URL:', response.url);
 
     // Check if response is JSON
     const contentType = response.headers.get('content-type');
-    console.log('Content-Type:', contentType);
+    // console.log('Content-Type:', contentType);
 
     if (!contentType || !contentType.includes('application/json')) {
       // Get the HTML response for debugging
@@ -152,7 +152,7 @@ export const getUserProfile = async () => {
     }
 
     const data = await response.json();
-    console.log('Get profile response:', data);
+    // console.log('Get profile response:', data);
 
     if (!response.ok) {
       throw {
@@ -170,7 +170,7 @@ export const getUserProfile = async () => {
 };
 export const updateUserProfile = async (profileData) => {
   try {
-    console.log('Making update request to:', API_ENDPOINTS.USER.PROFILE);
+    // console.log('Making update request to:', API_ENDPOINTS.USER.PROFILE);
     
     let requestConfig = {
       method: 'PATCH',
@@ -182,22 +182,22 @@ export const updateUserProfile = async (profileData) => {
       delete headers['Content-Type'];
       requestConfig.headers = headers;
       requestConfig.body = profileData;
-      console.log('Sending FormData for profile update');
+      // console.log('Sending FormData for profile update');
       
       // Debug FormData contents
-      console.log('FormData entries:');
+      // console.log('FormData entries:');
       for (let [key, value] of profileData.entries()) {
-        console.log(key, typeof value === 'object' ? '[File]' : value);
+        // console.log(key, typeof value === 'object' ? '[File]' : value);
       }
     } else {
       requestConfig.body = JSON.stringify(profileData);
-      console.log('Sending JSON data for profile update:', profileData);
+      // console.log('Sending JSON data for profile update:', profileData);
     }
 
     const response = await fetch(API_ENDPOINTS.USER.PROFILE, requestConfig);
     
-    console.log('Update response status:', response.status);
-    console.log('Update response URL:', response.url);
+    // console.log('Update response status:', response.status);
+    // console.log('Update response URL:', response.url);
 
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -207,7 +207,7 @@ export const updateUserProfile = async (profileData) => {
     }
 
     const data = await response.json();
-    console.log('Update profile response:', data);
+    // console.log('Update profile response:', data);
 
     if (!response.ok) {
       if (response.status === 400 && typeof data === 'object') {
@@ -256,7 +256,7 @@ export const changeUserPassword = async (oldPassword, newPassword, confirmPasswo
     }
 
     const data = await response.json();
-    console.log('Change password response:', data);
+    // console.log('Change password response:', data);
 
     if (!response.ok) {
       throw data;
@@ -284,7 +284,7 @@ export const deleteProfilePicture = async () => {
     }
 
     const data = await response.json();
-    console.log('Delete picture response:', data);
+    // console.log('Delete picture response:', data);
 
     if (!response.ok) {
       throw data;
@@ -306,7 +306,7 @@ export const deleteProfilePicture = async () => {
 export const forgotPassword = async (email) => {
   try {
     // For debugging
-    console.log('Requesting password reset for email:', email);
+    // console.log('Requesting password reset for email:', email);
     
     const response = await fetch(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, {
       method: 'POST',
@@ -315,7 +315,7 @@ export const forgotPassword = async (email) => {
     });
 
     const data = await response.json();
-    console.log('Password reset request response:', data);
+    // console.log('Password reset request response:', data);
 
     if (!response.ok) {
       throw data;
@@ -336,7 +336,7 @@ export const forgotPassword = async (email) => {
  */
 export const validateResetToken = async (token) => {
   try {
-    console.log('Validating reset token:', token);
+    // console.log('Validating reset token:', token);
     
     const response = await fetch(API_ENDPOINTS.AUTH.RESET_PASSWORD + '/validate/', {
       method: 'POST',
@@ -345,7 +345,7 @@ export const validateResetToken = async (token) => {
     });
 
     const data = await response.json();
-    console.log('Token validation response:', data);
+    // console.log('Token validation response:', data);
 
     if (!response.ok) {
       throw data;
@@ -368,7 +368,7 @@ export const validateResetToken = async (token) => {
  */
 export const resetPassword = async (token, password, confirmPassword) => {
   try {
-    console.log('Resetting password with token:', token ? 'token provided' : 'no token');
+    // console.log('Resetting password with token:', token ? 'token provided' : 'no token');
     
     // Prepare request body based on whether confirmPassword is provided
    const requestBody = {
@@ -384,7 +384,7 @@ export const resetPassword = async (token, password, confirmPassword) => {
     });
 
     const data = await response.json();
-    console.log('Password reset response:', data);
+    // console.log('Password reset response:', data);
 
     if (!response.ok) {
       throw data;

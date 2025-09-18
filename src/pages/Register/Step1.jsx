@@ -28,14 +28,14 @@ export const StepOne = ({
     isValid: false
   });
   
-  // Get notification functions - with fallback to console.log if not available
+  // Get notification functions - with fallback to // console.log if not available
   const notificationContext = useNotification();
   const { success, error, info, warning } = notificationContext || {};
   
   // Create fallback functions if notification context is not available
-  const safeSuccess = success || ((msg) => console.log('SUCCESS:', msg));
+  const safeSuccess = success || ((msg) => // console.log('SUCCESS:', msg));
   const safeError = error || ((msg) => console.error('ERROR:', msg));
-  const safeInfo = info || ((msg) => console.log('INFO:', msg));
+  const safeInfo = info || ((msg) => // console.log('INFO:', msg));
   const safeWarning = warning || ((msg) => console.warn('WARNING:', msg));
   
   // Update preview when formData changes
@@ -74,7 +74,7 @@ export const StepOne = ({
           if (detection) {
             setFaceDetected(true);
             onFaceDetectionUpdate?.(true); // Notify parent
-            console.log("Existing photo verified on component load");
+            // console.log("Existing photo verified on component load");
           } else {
             setFaceDetected(false);
             onFaceDetectionUpdate?.(false); // Notify parent

@@ -20,12 +20,12 @@ function AllEventsPage() {
       setError(null);
       
       try {
-        console.log('🔄 AllEventsPage: Fetching events...');
+        // console.log('🔄 AllEventsPage: Fetching events...');
         const eventsData = await getAllEvents();
         
-        console.log('📨 AllEventsPage API Response:', eventsData);
-        console.log('📨 AllEventsPage Response type:', typeof eventsData);
-        console.log('📨 AllEventsPage Is array:', Array.isArray(eventsData));
+        // console.log('📨 AllEventsPage API Response:', eventsData);
+        // console.log('📨 AllEventsPage Response type:', typeof eventsData);
+        // console.log('📨 AllEventsPage Is array:', Array.isArray(eventsData));
         
         // Handle different API response formats
         let eventsList = [];
@@ -47,7 +47,7 @@ function AllEventsPage() {
           eventsList = [];
         }
         
-        console.log(`✅ AllEventsPage: Processed ${eventsList.length} events successfully`);
+        // console.log(`✅ AllEventsPage: Processed ${eventsList.length} events successfully`);
         setEvents(eventsList);
         
       } catch (err) {

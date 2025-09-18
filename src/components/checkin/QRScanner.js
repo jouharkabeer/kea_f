@@ -103,7 +103,7 @@ const QRScanner = ({ selectedEventId, onScanResult }) => {
   const handleQrCodeSuccess = async (decodedText) => {
     const raw = typeof decodedText === 'string' ? decodedText : String(decodedText ?? '');
     const norm = extractSecurePayload(raw);
-    console.log('QR raw:', raw, 'normalized:', norm);
+    // console.log('QR raw:', raw, 'normalized:', norm);
 
     // Require event selection
     if (!selectedEventId) {

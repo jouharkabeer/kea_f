@@ -113,22 +113,22 @@ export const NotificationProvider = ({ children }) => {
 
   // Helper methods for different notification types
   const success = useCallback((message, duration = 5000) => {
-    console.log('SUCCESS notification called:', message);
+    // console.log('SUCCESS notification called:', message);
     return showNotification(message, NOTIFICATION_TYPES.SUCCESS, duration);
   }, [showNotification]);
   
   const error = useCallback((message, duration = 5000) => {
-    console.log('ERROR notification called:', message);
+    // console.log('ERROR notification called:', message);
     return showNotification(message, NOTIFICATION_TYPES.ERROR, duration);
   }, [showNotification]);
   
   const info = useCallback((message, duration = 5000) => {
-    console.log('INFO notification called:', message);
+    // console.log('INFO notification called:', message);
     return showNotification(message, NOTIFICATION_TYPES.INFO, duration);
   }, [showNotification]);
   
   const warning = useCallback((message, duration = 5000) => {
-    console.log('WARNING notification called:', message);
+    // console.log('WARNING notification called:', message);
     return showNotification(message, NOTIFICATION_TYPES.WARNING, duration);
   }, [showNotification]);
 
@@ -164,12 +164,12 @@ export const useNotification = () => {
     console.error('useNotification must be used within a NotificationProvider');
     // Return safe fallback functions instead of throwing
     return {
-      success: (msg) => console.log('SUCCESS (fallback):', msg),
+      success: (msg) => // console.log('SUCCESS (fallback):', msg),
       error: (msg) => console.error('ERROR (fallback):', msg),
-      info: (msg) => console.log('INFO (fallback):', msg),
+      info: (msg) => // console.log('INFO (fallback):', msg),
       warning: (msg) => console.warn('WARNING (fallback):', msg),
       notifications: [],
-      showNotification: (msg) => console.log('NOTIFICATION (fallback):', msg),
+      showNotification: (msg) => // console.log('NOTIFICATION (fallback):', msg),
       removeNotification: () => {}
     };
   }

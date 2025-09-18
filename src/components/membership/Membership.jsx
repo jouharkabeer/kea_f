@@ -89,7 +89,7 @@ const MembershipCard = () => {
   // Get user ID from localStorage with improved parsing
   const getUserIdFromLocalStorage = () => {
     try {
-      console.log('All localStorage keys:', Object.keys(localStorage));
+      // console.log('All localStorage keys:', Object.keys(localStorage));
       
       // Check all possible localStorage keys that might contain user data
       const possibleKeys = ['user', 'userData', 'auth', 'profile', 'currentUser', 'userInfo'];
@@ -97,38 +97,38 @@ const MembershipCard = () => {
       for (const key of possibleKeys) {
         const data = localStorage.getItem(key);
         if (data) {
-          console.log(`Checking ${key}:`, data);
+          // console.log(`Checking ${key}:`, data);
           try {
             const parsed = JSON.parse(data);
             
             // Check all possible paths to user_id
             if (parsed.user_id) {
-              console.log(`Found user_id in ${key}.user_id:`, parsed.user_id);
+              // console.log(`Found user_id in ${key}.user_id:`, parsed.user_id);
               return parsed.user_id;
             } 
             else if (parsed.id) {
-              console.log(`Found id in ${key}.id:`, parsed.id);
+              // console.log(`Found id in ${key}.id:`, parsed.id);
               return parsed.id;
             }
             else if (parsed.user && parsed.user.user_id) {
-              console.log(`Found user_id in ${key}.user.user_id:`, parsed.user.user_id);
+              // console.log(`Found user_id in ${key}.user.user_id:`, parsed.user.user_id);
               return parsed.user.user_id;
             }
             else if (parsed.user && parsed.user.id) {
-              console.log(`Found id in ${key}.user.id:`, parsed.user.id);
+              // console.log(`Found id in ${key}.user.id:`, parsed.user.id);
               return parsed.user.id;
             }
             else if (parsed.data && parsed.data.user_id) {
-              console.log(`Found user_id in ${key}.data.user_id:`, parsed.data.user_id);
+              // console.log(`Found user_id in ${key}.data.user_id:`, parsed.data.user_id);
               return parsed.data.user_id;
             }
             else if (parsed.data && parsed.data.id) {
-              console.log(`Found id in ${key}.data.id:`, parsed.data.id);
+              // console.log(`Found id in ${key}.data.id:`, parsed.data.id);
               return parsed.data.id;
             }
             // Handle nested user objects
             else if (parsed.data && parsed.data.user && parsed.data.user.user_id) {
-              console.log(`Found user_id in ${key}.data.user.user_id:`, parsed.data.user.user_id);
+              // console.log(`Found user_id in ${key}.data.user.user_id:`, parsed.data.user.user_id);
               return parsed.data.user.user_id;
             }
           } catch (e) {
@@ -141,7 +141,7 @@ const MembershipCard = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const userIdFromUrl = urlParams.get('user_id');
       if (userIdFromUrl) {
-        console.log('Found user_id in URL parameters:', userIdFromUrl);
+        // console.log('Found user_id in URL parameters:', userIdFromUrl);
         return userIdFromUrl;
       }
       
@@ -159,11 +159,11 @@ const MembershipCard = () => {
   // Function to check if card exists (by calling generate API which checks existence)
   const checkAndFetchCard = async () => {
     try {
-      console.log('Checking if membership card exists for user:', userId);
+      // console.log('Checking if membership card exists for user:', userId);
       
       // Call generate API - it will return existing card if it exists
       const result = await generateMembershipCard(userId);
-      console.log('Card check result:', result);
+      // console.log('Card check result:', result);
       
       if (result.card_exists || result.membership_card_url) {
         // Card already exists
@@ -180,7 +180,7 @@ const MembershipCard = () => {
         setCardUrl(fullUrl);
         setDirectViewUrl(`${backendBaseUrl}/auth/view-card/${userId}/?t=${Date.now()}`);
         
-        console.log('Existing card found and loaded');
+        // console.log('Existing card found and loaded');
         return true;
       }
       
@@ -195,7 +195,7 @@ const MembershipCard = () => {
   const generateNewCard = async () => {
     // Prevent multiple simultaneous generations
     if (isGenerating) {
-      console.log('Card generation already in progress');
+      // console.log('Card generation already in progress');
       return;
     }
     
@@ -205,7 +205,7 @@ const MembershipCard = () => {
       
       // Since the card doesn't exist, the generate API will create it
       const generateResult = await generateMembershipCard(userId);
-      console.log('New card generation result:', generateResult);
+      // console.log('New card generation result:', generateResult);
       
       // Complete progress
       clearInterval(progressInterval);
@@ -266,9 +266,9 @@ const MembershipCard = () => {
       
       try {
         // First, get user details
-        console.log('Fetching user data for ID:', userId);
+        // console.log('Fetching user data for ID:', userId);
         const userData = await getUserDetails(userId);
-        console.log('User data received:', userData);
+        // console.log('User data received:', userData);
         setUser(userData);
 
         // Check if card exists using the generate API
@@ -276,7 +276,7 @@ const MembershipCard = () => {
         
         if (!cardExists) {
           // No card exists, show the interface to allow user to generate one
-          console.log('No membership card found for user');
+          // console.log('No membership card found for user');
           setCardExists(false);
         }
         
@@ -328,14 +328,14 @@ const MembershipCard = () => {
       setError('');
       setActionMessage('');
       
-      console.log('Regenerating membership card for user:', userId);
+      // console.log('Regenerating membership card for user:', userId);
       
       // Start progress indicator
       const progressInterval = simulateProgress();
       
       // Call the regenerate API
       const result = await regenerateMembershipCard(userId);
-      console.log('Regeneration result:', result);
+      // console.log('Regeneration result:', result);
       
       // Complete progress
       clearInterval(progressInterval);
