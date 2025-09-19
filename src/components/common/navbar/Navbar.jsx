@@ -168,6 +168,7 @@ const isActive = useCallback((path) => {
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
+    setMobileUserDropdownOpen(false); // Also close mobile user dropdown when closing drawer
   }, []);
 
   const openDrawer = useCallback(() => {
@@ -212,6 +213,7 @@ const isActive = useCallback((path) => {
     const handleClickOutside = (e) => {
       if (drawerOpen && !e.target.closest('.mobile-nav') && !e.target.closest('.menu-toggle')) {
         setDrawerOpen(false);
+        setMobileUserDropdownOpen(false);
       }
       
       if (userDropdownOpen && 
@@ -335,7 +337,7 @@ const isActive = useCallback((path) => {
       <div className={`mobile-nav ${drawerOpen ? "open" : ""}`}>
         <FaTimes className="close-btn" size={24} onClick={closeDrawer} />
 
-        <ul className="mobile-nav__list" >
+        <ul className="mobile-nav__list">
           {navigationItems.map(({ path, label }) => (
             <li key={path} className={`mobile-nav__item ${isActive(path) ? 'active' : ''}`}>
               <Link to={path} className="mobile-nav__link" onClick={closeDrawer}>{label}</Link>
@@ -347,20 +349,20 @@ const isActive = useCallback((path) => {
             <>
               <li className="mobile-user-info" onClick={toggleMobileUserDropdown}>
                 <UserAvatar url={profilePictureUrl} size={24} />
-                <span>{displayName}</span>
+                <span className="mobile-user-name">{displayName}</span>
                 <FaChevronDown className={`dropdown-arrow ${mobileUserDropdownOpen ? 'rotated' : ''}`} />
               </li>  
               
               {mobileUserDropdownOpen && (
                 <div className="mobile-user-dropdown" ref={mobileUserDropdownRef}>
-                  <li className={`mobile-nav__item ${isActive('/profile-edit') ? 'active' : ''}`}>
+                  <li className={`mobile-nav__item mobile-dropdown-item ${isActive('/profile-edit') ? 'active' : ''}`}>
                     <Link to="/profile-edit" onClick={closeDrawer} className="mobile-nav__link">
                       <FaUserEdit size={16} /> 
                       <span>Edit Profile</span>
                     </Link>
                   </li>
                   
-                  <li className={`mobile-nav__item ${isActive('/membership-card') ? 'active' : ''}`}>
+                  <li className={`mobile-nav__item mobile-dropdown-item ${isActive('/membership-card') ? 'active' : ''}`}>
                     <Link to="/membership-card" onClick={closeDrawer} className="mobile-nav__link">
                       <FaIdCard size={16} /> 
                       <span>Membership Card</span>
@@ -368,22 +370,23 @@ const isActive = useCallback((path) => {
                   </li>
                   
                   {isAdmin && (
-                    <li className={`mobile-nav__item ${isActive('/qr-checkin') ? 'active' : ''}`}>
+                    <li className={`mobile-nav__item mobile-dropdown-item ${isActive('/qr-checkin') ? 'active' : ''}`}>
                       <Link to="/qr-checkin" onClick={closeDrawer} className="mobile-nav__link">
                         <FaQrcode size={16} /> 
                         <span>Verify QR</span>
                       </Link>
                     </li>
                   )}
-                  
-                  <li className="mobile-nav__item">
-                    <button className="mobile-nav__logout" onClick={handleLogout}>
-                      <FaSignOutAlt size={16} />
-                      <span>Logout</span>
-                    </button>
-                  </li>
                 </div>
               )}
+              
+              {/* Logout button as separate item after all navigation */}
+              <li className="mobile-nav__item logout-item">
+                <button className="mobile-nav__logout" onClick={handleLogout}>
+                  <FaSignOutAlt size={16} />
+                  <span>Logout</span>
+                </button>
+              </li>
             </>
           ) : (
             <>
