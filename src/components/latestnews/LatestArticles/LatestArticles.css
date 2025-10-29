@@ -51,7 +51,7 @@
   
   .article-description {
     font-size: 0.95rem;
-    color: var(--text-color);
+    /* color: var(--text-color); */
     margin-top: 5px;
   }
   

@@ -3,6 +3,7 @@ import './Events.css';
 import CareerConnectImage from '../assets/programs/CareerConnect.jpeg';
 import AnnualDayImage from '../assets/programs/AnnualDay.jpeg';
 import Magazine from '../assets/programs/magazine.jpg'
+import music from '../assets/newsarticles/meet.jpg'
 
 const Events = () => {
   const handleCareerConnectRegister = () => {
@@ -70,16 +71,16 @@ const Events = () => {
                     <div className="event-card">
             <div className="event-image">
 
-              <img src={Magazine} alt="KEA Annual Day 2025"/>
+              <img src={music} alt="KEA Annual Day 2025"/>
 
               {/* <ImagePopup show={show} handleClose={closeImage} image={selectedImage} /> */}
 
             </div>
             <div className="event-content">
-              <h2>KEA Annual Day 2025</h2>
+              <h2>Musical Event 2025</h2>
               <div className="event-details">
                 <div className="event-info">
-                  <span className="event-date">Date: 9th November 2025</span>
+                  <span className="event-date">Date: 24th November 2024</span>
                   <span className="event-venue">Venue: NIMHANS Convention Centre, Bengaluru</span>
                   <span className="event-entry">Time: 9:00 AM - 5:00 PM IST</span>
                 </div>

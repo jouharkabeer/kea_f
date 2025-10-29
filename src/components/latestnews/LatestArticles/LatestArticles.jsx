@@ -1,77 +1,66 @@
 import React, { useState } from "react";
 import "./LatestArticles.css";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
-
+import bloodcamp from '../../../assets/newsarticles/bloodcamp.jpg'
+import magazine from '../../../assets/newsarticles/magazine.jpg'
+import football from '../../../assets/newsarticles/football.jpg'
+import soccor from '../../../assets/newsarticles/soccor.jpg'
+import badminton from '../../../assets/newsarticles/badminton.jpg'
+import meet from '../../../assets/newsarticles/meet.jpg'
 // Sample articles data
+
+
 const articles = [
   {
     id: 1,
-    title: "Exploring Potential and Challenges in Global Agriculture.",
-    date: "October 23, 2023",
+    title: "Blood Donation Camp.",
+    date: "September 21, 2024",
     description:
-      "Uncovering the Vast Potential and Complex Challenges in the World of Global Agriculture.",
-    image: "https://via.placeholder.com/300x200", // Replace with actual image
+      "In association with Lions Club of Bengaluru.",
+    image: bloodcamp, // Replace with actual image
   },
   {
     id: 2,
-    title: "Bringing Change in the Livestock Industry.",
-    date: "October 23, 2023",
+    title: "Magazine Article Invitation.",
+    date: "April 04, 2025",
     description:
-      "Revealing Innovations, Challenges and Transformation Potential that Bring Positive Change.",
-    image: "https://via.placeholder.com/300x200",
+      "Essays, Industry Insights, Tech Article, Poetry& Short Stories, Movies & Book Reviews, Photographs, original paintings & Sketches, Travelogues.",
+    image: magazine,
   },
   {
     id: 3,
-    title: "Potential and Constraints Faced in Production Quality.",
-    date: "October 23, 2023",
+    title: "Inter Alumini football tournament 2025.",
+    date: "July 26, 2025",
     description:
-      "Discusses Challenges and Opportunities in Achieving High Production Standards.",
-    image: "https://via.placeholder.com/300x200",
+      "Held at Whitefield United Mahadevapura, Bengaluru.",
+    image: football,
   },
   {
     id: 4,
-    title: "Achieving High Productivity from Your Own Home Garden.",
-    date: "October 23, 2023",
+    title: "Annual Meet 2024.",
+    date: "November 24, 2024",
     description:
-      "A Practical Guide to Achieving Satisfactory Results from Plants Grown in Your Home.",
-    image: "https://via.placeholder.com/300x200",
+      "Annual Meet 2024 at Marthahalli, New Horizon Engineering College Auditorium",
+    image: meet,
   },
   {
     id: 5,
-    title: "The Best Guide to Planting Seeds with Optimal Results.",
-    date: "October 23, 2023",
+    title: "Badminton Tournament 2025.",
+    date: "February 01, 2025",
     description:
-      "Effective Strategies and Techniques to Achieve Healthy and Productive Plant Growth.",
-    image: "https://via.placeholder.com/300x200",
+      "Badminton Tornament 2025 at Kalavedi Sports Academy, Kadubeesanhalli",
+    image: badminton,
   },
   {
     id: 6,
-    title:
-      "Strategies for Caring for Your Garden More Efficiently and Productively.",
-    date: "October 23, 2023",
+    title: "Soccer 2025.",
+    date: "July 26, 2025",
     description:
-      "An approach that improves plant performance and makes garden management easier.",
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    id: 7,
-    title:
-      "Strategies for Caring for Your Garden More Efficiently and Productively.",
-    date: "October 23, 2023",
-    description:
-      "An approach that improves plant performance and makes garden management easier.",
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    id: 8,
-    title:
-      "Strategies for Caring for Your Garden More Efficiently and Productively.",
-    date: "October 23, 2023",
-    description:
-      "An approach that improves plant performance and makes garden management easier.",
-    image: "https://via.placeholder.com/300x200",
+      "Shageesh Memorial rolling trophy and Vineeth Memorial rolling trophy are the categories at Whitefield United, Mahadevapura, Bengaluru.",
+    image: soccor,
   },
 ];
+
 
 // Pagination settings
 const itemsPerPage = 6;
@@ -97,7 +86,6 @@ const LatestArticles = () => {
   return (
     <section className="latest-articles">
       <h2>Latest Articles</h2>
-Currently no Articles
       {/* Articles Grid */}
       <div className="articles-grid">
         {currentArticles.map((article) => (
