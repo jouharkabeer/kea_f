@@ -331,12 +331,12 @@ const { error: showError, info } = useNotification();
               <Link to="/login">
                 <button className={`btn-login ${isActive('/login') ? 'active-btn' : ''}`}>Login</button>
               </Link>
-              {/* <Link to="/register">
+              <Link to="/register">
                 <button className={`btn-signup ${isActive('/register') ? 'active-btn' : ''}`}>Register</button>
-              </Link> */}
-              <Link>
-                <button onClick={RegAlert} className={`btn-signup ${isActive('/register') ? 'active-btn' : ''}`}>Register</button>
               </Link>
+              {/* <Link>
+                <button onClick={RegAlert} className={`btn-signup ${isActive('/register') ? 'active-btn' : ''}`}>Register</button>
+              </Link> */}
             </div>
           )}
 
@@ -407,8 +407,8 @@ const { error: showError, info } = useNotification();
                 <Link to="/login" className="mobile-nav__link" onClick={closeDrawer}>Login</Link>
               </li>
               <li className={`mobile-nav__item ${isActive('/register') ? 'active' : ''}`}>
-                {/* <Link to="/register" className="mobile-nav__link" onClick={closeDrawer}>Register</Link> */}
-                <Link className="mobile-nav__link"   onClick={() => { closeDrawer(); RegAlert(); }}>Register</Link>
+                <Link to="/register" className="mobile-nav__link" onClick={closeDrawer}>Register</Link>
+                {/* <Link className="mobile-nav__link"   onClick={() => { closeDrawer(); RegAlert(); }}>Register</Link> */}
               </li>
             </>
           )}
