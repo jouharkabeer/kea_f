@@ -15,9 +15,9 @@ export const StepTwo = ({ formData, handleChange }) => {
   ];
 
   // Generate year options (current year to 50 years back)
-  const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear() + 4;
   const yearOptions = [];
-  for (let year = currentYear; year >= currentYear - 50; year--) {
+  for (let year = currentYear; year >= currentYear - 79; year--) {
     yearOptions.push(year);
   }
 
