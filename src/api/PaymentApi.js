@@ -94,55 +94,134 @@ export const verifyPayment = async (paymentResponse) => {
     throw error;
   }
 };
-/**
- * Initiate Razorpay checkout
- * @param {Object} orderData - Order details from createRazorpayOrder
- * @param {Object} userInfo - User information for pre-filling checkout
- * @param {Function} onSuccess - Callback function on successful payment
- * @param {Function} onError - Callback function on payment failure
- */
-export const initiateRazorpayCheckout = (orderData, userInfo, onSuccess, onError) => {
-  // console.log('Initiating Razorpay checkout with order data:', orderData);
+
+
+
+// /**
+//  * Initiate Razorpay checkout
+//  * @param {Object} orderData - Order details from createRazorpayOrder
+//  * @param {Object} userInfo - User information for pre-filling checkout
+//  * @param {Function} onSuccess - Callback function on successful payment
+//  * @param {Function} onError - Callback function on payment failure
+//  */
+// export const initiateRazorpayCheckout = (orderData, userInfo, onSuccess, onError) => {
+//   // console.log('Initiating Razorpay checkout with order data:', orderData);
   
-  const options = {
-    key: orderData.razorpay_key,
-    amount: orderData.amount.toString(),
-    currency: orderData.currency,
-    name: 'Kerala Engineers Association',
-    description: 'Membership Fee',
-    order_id: orderData.order_id,
-    handler: async function (response) {
-      // Include user_id and order_id in the response for verification
-      const paymentData = {
-        ...response,
-        user_id: orderData.user_id, // Important: Pass user_id to verification
-        order_id: orderData.order_id
-      };
-      // console.log('Payment successful, data for verification:', paymentData);
-      if (onSuccess) onSuccess(paymentData);
-    },
-    prefill: {
-      name: userInfo.fullName,
-      email: userInfo.email,
-      contact: userInfo.contactNo
-    },
-    notes: {
-      user_id: orderData.user_id // Include user_id in notes for backend access
-    },
-    theme: {
-      color: '#267540' // KEA green color
-    }
+//   const options = {
+//     key: orderData.razorpay_key,
+//     amount: orderData.amount.toString(),
+//     currency: orderData.currency,
+//     name: 'Kerala Engineers Association',
+//     description: 'Membership Fee',
+//     order_id: orderData.order_id,
+//     handler: async function (response) {
+//       // Include user_id and order_id in the response for verification
+//       const paymentData = {
+//         ...response,
+//         user_id: orderData.user_id, // Important: Pass user_id to verification
+//         order_id: orderData.order_id
+//       };
+//       // console.log('Payment successful, data for verification:', paymentData);
+//       if (onSuccess) onSuccess(paymentData);
+//     },
+//     prefill: {
+//       name: userInfo.fullName,
+//       email: userInfo.email,
+//       contact: userInfo.contactNo
+//     },
+//     notes: {
+//       user_id: orderData.user_id // Include user_id in notes for backend access
+//     },
+//     theme: {
+//       color: '#267540' // KEA green color
+//     }
+//   };
+
+//   try {
+//     const rzp = new window.Razorpay(options);
+//     rzp.open();
+  
+//     rzp.on('payment.failed', function (resp) {
+//       console.error('Payment failed:', resp.error);
+//       if (onError) onError(resp.error.description);
+//     });
+    
+//     return rzp;
+//   } catch (error) {
+//     console.error("Razorpay initialization error:", error);
+//     if (onError) onError("Could not initialize payment gateway");
+//     return null;
+//   }
+// };
+
+/**
+ * Initiate Razorpay checkout (Vite-compatible)
+ * Ensures Razorpay SDK is loaded before creating instance
+ *
+ * @param {Object} orderData - Object containing razorpay_key, amount, currency, order_id, user_id
+ * @param {Object} userInfo - Object containing fullName, email, contactNo
+ * @param {Function} onSuccess - Callback when payment succeeds
+ * @param {Function} onError - Callback when payment fails
+ */
+export const initiateRazorpayCheckout = async (orderData, userInfo, onSuccess, onError) => {
+  // Helper to dynamically load the Razorpay script if not already loaded
+  const loadRazorpayScript = () => {
+    return new Promise((resolve, reject) => {
+      if (window.Razorpay) return resolve(true); // Already loaded
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => reject("Failed to load Razorpay SDK");
+      document.body.appendChild(script);
+    });
   };
 
   try {
+    // Ensure Razorpay SDK is available
+    await loadRazorpayScript();
+
+    // Build Razorpay options
+    const options = {
+      key: orderData.razorpay_key,
+      amount: orderData.amount.toString(),
+      currency: orderData.currency,
+      name: "Kerala Engineers Association",
+      description: "Membership Fee",
+      order_id: orderData.order_id,
+      handler: async function (response) {
+        // Append user_id and order_id for backend verification
+        const paymentData = {
+          ...response,
+          user_id: orderData.user_id,
+          order_id: orderData.order_id,
+        };
+        if (onSuccess) onSuccess(paymentData);
+      },
+      prefill: {
+        name: userInfo.fullName || "",
+        email: userInfo.email || "",
+        contact: userInfo.contactNo || "",
+      },
+      notes: {
+        user_id: orderData.user_id,
+      },
+      theme: {
+        color: "#267540",
+      },
+    };
+
+    // Initialize Razorpay checkout
     const rzp = new window.Razorpay(options);
-    rzp.open();
-  
-    rzp.on('payment.failed', function (resp) {
-      console.error('Payment failed:', resp.error);
+
+    // Handle payment failure
+    rzp.on("payment.failed", function (resp) {
+      console.error("Payment failed:", resp.error);
       if (onError) onError(resp.error.description);
     });
-    
+
+    // Open Razorpay payment window
+    rzp.open();
+
     return rzp;
   } catch (error) {
     console.error("Razorpay initialization error:", error);
@@ -150,6 +229,10 @@ export const initiateRazorpayCheckout = (orderData, userInfo, onSuccess, onError
     return null;
   }
 };
+
+
+
+
 /**
  * Create a Razorpay order for membership payment
  * @param {string} userId - User ID
@@ -194,7 +277,7 @@ export const initializeRazorpay = (orderData, options = {}) => {
   };
 
   const rzpOptions = { ...defaultOptions, ...options };
-  
+  console.log('Initializing Razorpay with options:', rzpOptions);
   try {
     const rzp = new window.Razorpay(rzpOptions);
     return rzp;

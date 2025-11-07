@@ -506,10 +506,10 @@ export const StepOne = ({
           <span className="completion-icon">{formData.password === formData.confirmPassword && formData.confirmPassword ? '✓' : '○'}</span>
           Password Confirmation
         </div>
-        <div className={`completion-item ${faceDetected ? 'completed' : ''}`}>
+        {/* <div className={`completion-item ${faceDetected ? 'completed' : ''}`}>
           <span className="completion-icon">{faceDetected ? '✓' : '○'}</span>
           Face Verified Photo
-        </div>
+        </div> */}
       </div>
 
       {/* Progress indicator */}
