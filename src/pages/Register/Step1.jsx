@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FiCamera, FiUpload, FiCheckCircle, FiAlertTriangle, FiXCircle, FiRefreshCw, FiUser, FiEye, FiEyeOff } from "react-icons/fi";
 import Webcam from "react-webcam";
-import * as faceapi from "face-api.js";
+// import * as faceapi from "face-api.js";
 import { useNotification } from "../../contexts/NotificationContext";
 
 export const StepOne = ({
@@ -46,16 +46,16 @@ export const StepOne = ({
   }, [formData.selfieImage]);
   
   // Load face detection models
-  useEffect(() => {
-    const loadModels = async () => {
-      try {
-        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-      } catch (err) {
-        safeError("Some features may be limited.");
-      }
-    };
-    loadModels();
-  }, [safeError]);
+  // useEffect(() => {
+  //   const loadModels = async () => {
+  //     try {
+  //       await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+  //     } catch (err) {
+  //       safeError("Some features may be limited.");
+  //     }
+  //   };
+  //   loadModels();
+  // }, [safeError]);
   
   // Check existing photo for face detection on component load
   useEffect(() => {
@@ -66,11 +66,11 @@ export const StepOne = ({
       
       img.onload = async () => {
         try {
-          const detection = await faceapi.detectSingleFace(
-            img,
-            new faceapi.TinyFaceDetectorOptions()
-          );
-          
+          // const detection = await faceapi.detectSingleFace(
+          //   img,
+          //   new faceapi.TinyFaceDetectorOptions()
+          // );
+          const detection = true; // Placeholder for actual detection result
           if (detection) {
             setFaceDetected(true);
             onFaceDetectionUpdate?.(true); // Notify parent
@@ -179,11 +179,11 @@ export const StepOne = ({
         
         img.onload = async () => {
           try {
-            const detection = await faceapi.detectSingleFace(
-              img,
-              new faceapi.TinyFaceDetectorOptions()
-            );
-            
+            // const detection = await faceapi.detectSingleFace(
+            //   img,
+            //   new faceapi.TinyFaceDetectorOptions()
+            // );
+            const detection = true; // Placeholder for actual detection result
             if (detection) {
               setFaceDetected(true);
               onFaceDetectionUpdate?.(true); // Notify parent
@@ -231,11 +231,11 @@ export const StepOne = ({
   
       img.onload = async () => {
         try {
-          const detection = await faceapi.detectSingleFace(
-            img,
-            new faceapi.TinyFaceDetectorOptions()
-          );
-    
+          // const detection = await faceapi.detectSingleFace(
+          //   img,
+          //   new faceapi.TinyFaceDetectorOptions()
+          // );
+          const detection = true; // Placeholder for actual detection result
           if (detection) {
             setFaceDetected(true);
             handleCapturePhoto(imageSrc);

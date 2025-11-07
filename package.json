@@ -9,6 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "overrides": {
+  "node-fetch": "2.6.9"
+},
   "dependencies": {
     "axios": "^1.12.2",
     "face-api.js": "^0.22.2",
