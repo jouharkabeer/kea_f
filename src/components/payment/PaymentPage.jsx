@@ -85,14 +85,21 @@ const PaymentPage = () => {
       const orderData = await createMembershipOrder(userInfo.userId);
       success('Payment order created successfully');
       
-      // Initialize Razorpay with callbacks
-      const rzp = initializeRazorpay(orderData, {
+      // Initialize Razorpay with callbacks (await since it's now async)
+      const rzp = await initializeRazorpay(orderData, {
         handler: async function(response) {
           try {
             setLoading(true);
             info('Verifying payment...');
+            
+            // Include user_id in verification payload
+            const verificationPayload = {
+              ...response,
+              user_id: userInfo.userId
+            };
+            
             // Verify the payment
-            const result = await verifyPayment(response);
+            const result = await verifyPayment(verificationPayload);
             
             // Show success message and redirect
             success('Payment successful! Your membership is now active.');

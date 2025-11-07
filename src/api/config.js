@@ -41,7 +41,6 @@ export const API_ENDPOINTS = {
   // Payment endpoints
   PAYMENT: {
     CREATE_ORDER: `${BASE_URL}/payment/create-order/`,
-    VERIFY_PAYMENT: `${BASE_URL}/payment/verify/`,
     GET_PLANS: `${BASE_URL}/payment/plans/`,
     CREATE_RAZORPAY_ORDER: `${BASE_URL}/auth/create-razorpay-order/`,
     VERIFY_PAYMENT: `${BASE_URL}/auth/verify-payment/`,
