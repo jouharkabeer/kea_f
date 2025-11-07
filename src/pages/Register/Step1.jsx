@@ -187,7 +187,7 @@ export const StepOne = ({
             if (detection) {
               setFaceDetected(true);
               onFaceDetectionUpdate?.(true); // Notify parent
-              safeSuccess("Face detected and verified in photo!");
+              // safeSuccess("Face detected and verified in photo!");
             } else {
               setFaceDetected(false);
               onFaceDetectionUpdate?.(false); // Notify parent
