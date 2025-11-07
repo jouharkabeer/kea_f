@@ -254,7 +254,7 @@ const { error: showError, info } = useNotification();
         <div className="header-top__left">
           <span className="header-contact">
             <FaEnvelope size={12} />
-            <span>keaalumniblr@kea.ac.in</span>
+            <span>keab.info@gmail.com</span>
           </span>
           <span className="header-contact">
             <FaPhoneAlt size={12} />
