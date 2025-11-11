@@ -52,75 +52,171 @@ export const loginUser = async (identifier, password) => {
 };
 
 /**
- * Register a new user
+ * Fetch with timeout
+ * @param {string} url - Request URL
+ * @param {Object} config - Fetch configuration
+ * @param {number} timeout - Timeout in milliseconds (default: 60000)
+ * @returns {Promise<Response>} - Fetch response
+ */
+const fetchWithTimeout = (url, config, timeout = 60000) => {
+  return Promise.race([
+    fetch(url, config),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout')), timeout)
+    )
+  ]);
+};
+
+/**
+ * Register a new user with retry logic
  * @param {Object} userData - User registration data
+ * @param {number} maxRetries - Maximum number of retries (default: 2)
  * @returns {Promise<Object>} - Contains user data and possibly a token
  */
-export const registerUser = async (userData) => {
-  try {
-    let requestConfig = {
-      method: 'POST',
-    };
-    if (userData instanceof FormData) {
-      requestConfig.body = userData;
-      // console.log('Sending FormData (with file upload)');
-    } else {
-      // For regular JSON data
-      requestConfig.headers = combineHeaders();
-      requestConfig.body = JSON.stringify(userData);
-      // console.log('Sending JSON data');
-    }
+export const registerUser = async (userData, maxRetries = 2) => {
+  let lastError;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      let requestConfig = {
+        method: 'POST',
+      };
+      
+      if (userData instanceof FormData) {
+        requestConfig.body = userData;
+        // Don't set Content-Type header for FormData, browser will set it with boundary
+      } else {
+        // For regular JSON data
+        requestConfig.headers = combineHeaders();
+        requestConfig.body = JSON.stringify(userData);
+      }
 
-    const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, requestConfig);
-    const data = await response.json();
+      // Use fetch with timeout (60 seconds)
+      const response = await fetchWithTimeout(
+        API_ENDPOINTS.AUTH.REGISTER, 
+        requestConfig,
+        60000 // 60 second timeout
+      );
+      
+      // Check if response is ok before parsing JSON
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // If not JSON, try to get text for error message
+        const text = await response.text();
+        throw {
+          message: `Server returned non-JSON response: ${text.substring(0, 200)}`,
+          originalError: text,
+          status: response.status,
+          isNetworkError: false
+        };
+      }
 
-    if (!response.ok) {
-      let errorMessage = 'Registration failed';
-      if (typeof data === 'object') {
-        const errorFields = Object.keys(data);
-        
-        if (errorFields.length > 0) {
-          const firstField = errorFields[0];
-          const fieldError = Array.isArray(data[firstField]) 
-            ? data[firstField][0] 
-            : data[firstField];
+      if (!response.ok) {
+        let errorMessage = 'Registration failed';
+        if (typeof data === 'object') {
+          const errorFields = Object.keys(data);
           
-          errorMessage = `${firstField}: ${fieldError}`;
-          
-          if (firstField === 'email' && fieldError.includes('already exists')) {
-            errorMessage = 'This email is already registered. Please use a different email or try logging in.';
-          } else if (firstField === 'phone_number' && fieldError.includes('already exists')) {
-            errorMessage = 'This phone number is already registered. Please use a different number or try logging in.';
+          if (errorFields.length > 0) {
+            const firstField = errorFields[0];
+            const fieldError = Array.isArray(data[firstField]) 
+              ? data[firstField][0] 
+              : data[firstField];
+            
+            errorMessage = `${firstField}: ${fieldError}`;
+            
+            if (firstField === 'email' && fieldError.includes('already exists')) {
+              errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+            } else if (firstField === 'phone_number' && fieldError.includes('already exists')) {
+              errorMessage = 'This phone number is already registered. Please use a different number or try logging in.';
+            }
+          } else if (data.error) {
+            errorMessage = data.error;
+          } else if (data.message) {
+            errorMessage = data.message;
           }
-        } else if (data.error) {
-          errorMessage = data.error;
-        } else if (data.message) {
-          errorMessage = data.message;
+        } else if (typeof data === 'string') {
+          errorMessage = data;
         }
-      } else if (typeof data === 'string') {
-        errorMessage = data;
+        
+        // Don't retry on client errors (4xx), only on server errors (5xx)
+        if (response.status >= 400 && response.status < 500) {
+          throw {
+            message: errorMessage,
+            originalError: data,
+            status: response.status,
+            isNetworkError: false
+          };
+        }
+        
+        // Retry on server errors
+        throw {
+          message: errorMessage,
+          originalError: data,
+          status: response.status,
+          isNetworkError: false,
+          retryable: true
+        };
+      }
+
+      // Return both data and HTTP status so callers can branch on 200/201/409
+      return { data, status: response.status };
+      
+    } catch (error) {
+      lastError = error;
+      
+      // Determine if this is a network error or server error
+      const isNetworkError = 
+        error.message === 'Request timeout' ||
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('NetworkError') ||
+        error.name === 'TypeError' ||
+        error.status === 'NETWORK_ERROR';
+      
+      const isRetryable = 
+        isNetworkError || 
+        (error.retryable === true) ||
+        (error.status >= 500 && error.status < 600);
+      
+      // Don't retry on last attempt or if error is not retryable
+      if (attempt === maxRetries || !isRetryable) {
+        // Format error message based on error type
+        let errorMessage = 'Registration failed';
+        
+        if (isNetworkError) {
+          if (error.message === 'Request timeout') {
+            errorMessage = 'Registration request timed out. The server is taking too long to respond. Please check your internet connection and try again.';
+          } else {
+            errorMessage = 'Network error during registration. Please check your internet connection and try again.';
+          }
+        } else if (error.message && error.originalError) {
+          errorMessage = error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        throw {
+          message: errorMessage,
+          originalError: error,
+          status: error.status || 'NETWORK_ERROR',
+          isNetworkError: isNetworkError,
+          attempts: attempt + 1
+        };
       }
       
-      throw {
-        message: errorMessage,
-        originalError: data,
-        status: response.status
-      };
+      // Wait before retrying (exponential backoff: 1s, 2s)
+      const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      console.warn(`Registration attempt ${attempt + 1} failed, retrying in ${delay}ms...`, error.message);
     }
-
-    // Return both data and HTTP status so callers can branch on 200/201/409
-    return { data, status: response.status };
-  } catch (error) {
-    if (error.message && error.originalError) {
-      throw error;
-    }
-    
-    throw {
-      message: error.message || 'Network error during registration',
-      originalError: error,
-      status: 'NETWORK_ERROR'
-    };
   }
+  
+  // This should never be reached, but just in case
+  throw lastError;
 };
 /**
  * Get current user profile with enhanced debugging

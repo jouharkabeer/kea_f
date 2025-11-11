@@ -481,10 +481,58 @@ function MultiStepRegister() {
       
     } catch (error) {
       console.error('Registration error:', error);
-      const errorMsg = error.message || error?.originalError?.message || 'An unexpected error occurred during registration.';
-      setErrorMessage('Registration failed: ' + errorMsg);
-      showError('Registration failed: ' + errorMsg, 10000);
+      
+      // Determine error type and provide user-friendly messages
+      const isNetworkError = error.isNetworkError === true || 
+                            error.status === 'NETWORK_ERROR' ||
+                            error.message?.includes('timeout') ||
+                            error.message?.includes('Network error') ||
+                            error.message?.includes('Failed to fetch');
+      
+      const attempts = error.attempts || 1;
+      
+      let errorMsg;
+      let userMessage;
+      
+      if (isNetworkError) {
+        if (error.message?.includes('timeout')) {
+          userMessage = 'Registration request timed out. The server is taking longer than expected. Please check your internet connection and try again.';
+          errorMsg = 'Request timeout - please check your internet connection';
+        } else {
+          userMessage = 'Network error occurred during registration. Please check your internet connection and try again.';
+          errorMsg = 'Network connection error';
+        }
+        
+        // Add retry suggestion if multiple attempts were made
+        if (attempts > 1) {
+          userMessage += ` (Attempted ${attempts} times)`;
+        }
+      } else if (error.status >= 500) {
+        // Server error
+        userMessage = 'Server error occurred. Our team has been notified. Please try again in a few moments.';
+        errorMsg = error.message || 'Server error';
+      } else if (error.status >= 400 && error.status < 500) {
+        // Client error - use the error message from server
+        userMessage = error.message || 'Registration failed. Please check your information and try again.';
+        errorMsg = error.message || 'Validation error';
+      } else {
+        // Unknown error
+        userMessage = error.message || 'An unexpected error occurred during registration. Please try again.';
+        errorMsg = error.message || 'Unexpected error';
+      }
+      
+      setErrorMessage(userMessage);
+      showError(userMessage, 10000);
       setIsLoading(false);
+      
+      // Log detailed error for debugging
+      console.error('Registration failed:', {
+        errorType: isNetworkError ? 'Network' : 'Server',
+        status: error.status,
+        attempts: attempts,
+        message: error.message,
+        originalError: error.originalError
+      });
     }
   };
 
