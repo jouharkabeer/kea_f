@@ -106,45 +106,91 @@ const UserProfileEditor = () => {
     }
   };
 
+  // const handleImageChange = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     if (!file.type.startsWith('image/')) {
+  //       setErrors(prev => ({
+  //         ...prev,
+  //         profile_picture: 'Please select a valid image file'
+  //       }));
+  //       showError('Please select a valid image file');
+  //       return;
+  //     }
+
+  //     if (file.size > 5 * 1024 * 1024) {
+  //       setErrors(prev => ({
+  //         ...prev,
+  //         profile_picture: 'Image size should be less than 5MB'
+  //       }));
+  //       showError('Image size should be less than 5MB');
+  //       return;
+  //     }
+
+  //     setProfile(prev => ({
+  //       ...prev,
+  //       profile_picture: file
+  //     }));
+
+  //     const reader = new FileReader();
+  //     reader.onload = (e) => {
+  //       setPreviewImage(e.target.result);
+  //       info('Image preview updated');
+  //     };
+  //     reader.readAsDataURL(file);
+
+  //     setErrors(prev => ({
+  //       ...prev,
+  //       profile_picture: ''
+  //     }));
+  //   }
+  // };
+
+
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        setErrors(prev => ({
-          ...prev,
-          profile_picture: 'Please select a valid image file'
-        }));
-        showError('Please select a valid image file');
-        return;
-      }
+  const file = e.target.files[0];
+  if (!file) return;
 
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors(prev => ({
-          ...prev,
-          profile_picture: 'Image size should be less than 5MB'
-        }));
-        showError('Image size should be less than 5MB');
-        return;
-      }
+  // Validate file type
+  if (!file.type.startsWith("image/")) {
+    setErrors(prev => ({
+      ...prev,
+      profile_picture: "Please select a valid image file",
+    }));
+    showError("Please select a valid image file");
+    e.target.value = ""; // reset input
+    return;
+  }
+  // Validate file size (5 MB)
+  if (file.size > 5 * 1024 * 1024) {
+    setErrors(prev => ({
+      ...prev,
+      profile_picture: "Image size should be less than 5MB",
+    }));
+    showError("Image size should be less than 5MB");
+    e.target.value = ""; // reset input
+    return;
+  }
 
-      setProfile(prev => ({
-        ...prev,
-        profile_picture: file
-      }));
+  // File is valid
+  setErrors(prev => ({
+    ...prev,
+    profile_picture: "",
+  }));
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewImage(e.target.result);
-        info('Image preview updated');
-      };
-      reader.readAsDataURL(file);
+  setProfile(prev => ({
+    ...prev,
+    profile_picture: file,
+  }));
 
-      setErrors(prev => ({
-        ...prev,
-        profile_picture: ''
-      }));
-    }
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    setPreviewImage(event.target.result);
+    info("Image preview updated");
   };
+  reader.readAsDataURL(file);
+};
+
 
   const validateForm = () => {
     const newErrors = {};
