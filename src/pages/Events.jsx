@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './Events.css';
 import CareerConnectImage from '../assets/programs/CareerConnect.jpeg';
 import AnnualDayImage from '../assets/programs/AnnualDay.jpeg';
+import Football from '../assets/programs/Football.jpeg'
 import Magazine from '../assets/programs/magazine.jpg'
 import music from '../assets/newsarticles/meet.jpg'
 
@@ -26,36 +27,34 @@ const Events = () => {
 
           <div className="event-card">
             <div className="event-image">
-              <img src={CareerConnectImage} alt="Career Connect 2025" />
+              <img src={Football} alt="Career Connect 2025" />
             </div>
             <div className="event-content">
-              <h2>Career Connect 2025</h2>
+              <h2>Football Tournament 2026</h2>
               <div className="event-details">
                 <div className="event-info">
-                  <span className="event-date">Date: 9th November 2025</span>
-                  <span className="event-venue">Venue: NIMHANS Convention Centre, Bengaluru</span>
-                  <span className="event-entry">Entry: FREE with registration</span>
+                  <span className="event-date">Date: 1th August 2026</span>
+                  <span className="event-venue">Venue: Whitefield United, MahaDevapura,Bengaluru</span>
+                  {/* <span className="event-entry">Entry: FREE with registration</span> */}
                 </div>
                 
                 <div className="event-description">
-                  <h3>Thriving as Engineers in a Disruptive World</h3>
+                  <h3>Football Unites People</h3>
                   <p>
-                    Freshers or Veterans — Disruption impacts us all. Join Career Connect 2025 for a 
-                    thought-provoking panel discussion and explore ideas, skills, and strategies to stay ahead.
+                    In previous years, team eligibility was verified through our alumni managers and college-wise member lists. This year, we're moving to a more streamlined and official process through the KEA Bengaluru membership portal.
                   </p>
                   
                   <div className="special-features">
-                    <h4>Special Features at the Venue:</h4>
+                    <h4>Requestes</h4>
                     <ul>
-                      <li>Professional Resume Review Booth – Get personalized feedback on your resume by Anand from Corp Placement.</li>
-                      <li>Resume Drop Zone – Submit your resume for upcoming opportunities through KEA's professional network.</li>
+                      <li>All players are requested to register as KEA Bangalore members and download their digital membership ID card, which will be used for verification at the venue</li>
                     </ul>
                   </div>
                 </div>
                 
-                <button className="register-btn" onClick={handleCareerConnectRegister}>
+                {/* <button className="register-btn" onClick={handleCareerConnectRegister}>
                   Register Now
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

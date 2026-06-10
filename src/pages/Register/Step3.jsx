@@ -113,9 +113,9 @@ export const StepThree = ({
               type="text"
               value={formData.otp}
               onChange={handleChange}
-              placeholder="Enter the 6-digit code"
+              placeholder="Enter the 4-digit code"
               autoComplete="one-time-code"
-              maxLength="6"
+              maxLength="4"
               disabled={isContactVerified}
               className={isContactVerified ? 'input-verified' : ''}
             />
