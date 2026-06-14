@@ -16,7 +16,7 @@ const Home = () => {
     const sponsor = {
       brand: "Our SPONSOR",
       company: "Alethea Communications",
-      description: "Alethea Communications Technologies is a leader in wireless test and measurement, helping customers validate real-world device, network, and application performance. Our flagship product, WiCheck, is a scalable and high-performance Wi-Fi testing solution that simplifies complex challenges and ensures reliable connectivity. With flexible solutions and deep domain expertise, Alethea enables customers to perfect broadband while maximizing ROI",
+      description: "Alethea Communications Technologies is a leader in wireless test and measurement, helping customers validate real-world device, network, network, and application performance. Our flagship product, WiCheck, is a scalable and high-performance Wi-Fi testing solution that simplifies complex challenges and ensures reliable connectivity. With flexible solutions and deep domain expertise, Alethea enables customers to perfect broadband while maximizing ROI",
       image: sponserimg,
     };
 
