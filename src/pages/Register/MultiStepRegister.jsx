@@ -481,6 +481,7 @@ function MultiStepRegister() {
       
     } catch (error) {
       console.error('Registration error:', error);
+      alert("error: " + JSON.stringify(error));
       
       // Determine error type and provide user-friendly messages
       const isNetworkError = error.isNetworkError === true || 
