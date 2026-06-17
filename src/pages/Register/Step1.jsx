@@ -4,6 +4,11 @@ import Webcam from "react-webcam";
 // import * as faceapi from "face-api.js";
 import { useNotification } from "../../contexts/NotificationContext";
 
+const FIELD_LIMITS = {
+  first_name: { max: 30, label: 'First Name' },
+  last_name: { max: 30, label: 'Last Name' },
+};
+
 export const StepOne = ({
   formData,
   handleChange,
@@ -22,6 +27,7 @@ export const StepOne = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [lengthErrors, setLengthErrors] = useState({});
   const [passwordValidation, setPasswordValidation] = useState({
     minLength: false,
     hasUppercase: false,
@@ -117,6 +123,46 @@ export const StepOne = ({
     // Call the parent change handler
     handleChange(e);
   };
+
+  const handleLimitedChange = (e) => {
+    const { name, value } = e.target;
+    const limit = FIELD_LIMITS[name];
+
+    if (!limit) {
+      handleChange(e);
+      return;
+    }
+
+    const trimmedValue = value.length > limit.max ? value.slice(0, limit.max) : value;
+
+    if (trimmedValue.length >= limit.max) {
+      setLengthErrors((prev) => ({
+        ...prev,
+        [name]: `${limit.label} has reached the maximum of ${limit.max} characters.`,
+      }));
+    } else {
+      setLengthErrors((prev) => {
+        if (!prev[name]) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+
+    if (trimmedValue !== value) {
+      handleChange({ target: { name, value: trimmedValue } });
+      return;
+    }
+
+    handleChange(e);
+  };
+
+  const renderLengthError = (fieldName) =>
+    lengthErrors[fieldName] ? (
+      <small className="input-error" style={{ color: 'red' }}>{lengthErrors[fieldName]}</small>
+    ) : null;
 
   const handleEmailChange = (e) => {
     handleChange(e);
@@ -294,10 +340,12 @@ export const StepOne = ({
           id="first_name"
           name="first_name"
           value={formData.first_name}
-          onChange={handleChange}
+          onChange={handleLimitedChange}
+          maxLength={FIELD_LIMITS.first_name.max}
           placeholder="Enter your first name"
           required
         />
+        {renderLengthError('first_name')}
       </div>
       
       <div className="form-group">
@@ -307,10 +355,12 @@ export const StepOne = ({
           id="last_name"
           name="last_name"
           value={formData.last_name}
-          onChange={handleChange}
+          onChange={handleLimitedChange}
+          maxLength={FIELD_LIMITS.last_name.max}
           placeholder="Enter your last name"
           required
         />
+        {renderLengthError('last_name')}
       </div>
       
       <div className="form-group">
@@ -549,6 +599,10 @@ export const StepOne = ({
 
 // Export the validation function for use in parent component
 export const validateStepOne = (formData, faceDetected) => {
+  const nameMaxLength = FIELD_LIMITS.first_name.max;
+  const isFirstNameValid = Boolean(formData.first_name) && formData.first_name.length <= nameMaxLength;
+  const isLastNameValid = Boolean(formData.last_name) && formData.last_name.length <= nameMaxLength;
+
   const passwordValidation = {
     minLength: formData.password?.length >= 8,
     hasUppercase: /[A-Z]/.test(formData.password || ''),
@@ -561,8 +615,8 @@ export const validateStepOne = (formData, faceDetected) => {
   
   return {
     isValid: !!(
-      formData.first_name &&
-      formData.last_name &&
+      isFirstNameValid &&
+      isLastNameValid &&
       formData.email &&
       isPasswordValid &&
       formData.password === formData.confirmPassword &&
@@ -570,8 +624,8 @@ export const validateStepOne = (formData, faceDetected) => {
       (formData.photoFile || formData.selfieImage)
     ),
     errors: {
-      firstName: !formData.first_name,
-      lastName: !formData.last_name,
+      firstName: !isFirstNameValid,
+      lastName: !isLastNameValid,
       email: !formData.email,
       password: !isPasswordValid,
       confirmPassword: formData.password !== formData.confirmPassword,
