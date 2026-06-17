@@ -1,8 +1,16 @@
 import React from 'react';
 import { FiBriefcase, FiUser, FiPhone, FiMapPin, FiDroplet, FiBookOpen, FiCalendar,  } from 'react-icons/fi';
 
+const FIELD_LIMITS = {
+  companyName: { max: 50, label: 'Company Name' },
+  designation: { max: 50, label: 'Designation' },
+  college_name: { max: 50, label: 'College/University Name' },
+  department_of_study: { max: 30, label: 'Department of Study' },
+  contactNo: { max: 15, label: 'Contact Number' },
+};
+
 export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPhoneAvailabilityCheck }) => {
-  const [departmentError, setDepartmentError] = React.useState('');
+  const [lengthErrors, setLengthErrors] = React.useState({});
   const [isCheckingPhone, setIsCheckingPhone] = React.useState(false);
   const bloodGroups = [
     { value: '', label: 'Select Blood Group' },
@@ -23,28 +31,41 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
     yearOptions.push(year);
   }
 
-  const handleDepartmentChange = (e) => {
-    const { value } = e.target;
-    if (value.length > 30) {
-      setDepartmentError('Department of Study cannot exceed 30 characters.');
+  const handleLimitedChange = (e) => {
+    const { name, value } = e.target;
+    const limit = FIELD_LIMITS[name];
+
+    if (!limit) {
+      handleChange(e);
+      return;
+    }
+
+    if (value.length > limit.max) {
+      setLengthErrors((prev) => ({
+        ...prev,
+        [name]: `${limit.label} cannot exceed ${limit.max} characters.`,
+      }));
       handleChange({
-        target: {
-          name: 'department_of_study',
-          value: value.slice(0, 30),
-        },
+        target: { name, value: value.slice(0, limit.max) },
       });
       return;
     }
 
-    if (departmentError) {
-      setDepartmentError('');
-    }
+    setLengthErrors((prev) => {
+      if (!prev[name]) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
     handleChange(e);
   };
 
-  const handleContactChange = (e) => {
-    handleChange(e);
-  };
+  const renderLengthError = (fieldName) =>
+    lengthErrors[fieldName] ? (
+      <small className="input-error" style={{ color: 'red' }}>{lengthErrors[fieldName]}</small>
+    ) : null;
 
   const handleContactBlur = async () => {
     if (!formData.contactNo || !onPhoneAvailabilityCheck) {
@@ -73,10 +94,12 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
           name="companyName"
           type="text"
           value={formData.companyName}
-          onChange={handleChange}
+          onChange={handleLimitedChange}
+          maxLength={FIELD_LIMITS.companyName.max}
           placeholder="Enter Company Name"
           autoComplete="organization"
         />
+        {renderLengthError('companyName')}
       </div>
       
       <div className="form-group">
@@ -89,10 +112,12 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
           name="designation"
           type="text"
           value={formData.designation}
-          onChange={handleChange}
+          onChange={handleLimitedChange}
+          maxLength={FIELD_LIMITS.designation.max}
           placeholder="Enter Your Job Title"
           autoComplete="organization-title"
         />
+        {renderLengthError('designation')}
       </div>
 
       {/* Academic Information Section */}
@@ -109,10 +134,12 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
             name="college_name"
             type="text"
             value={formData.college_name || ''}
-            onChange={handleChange}
+            onChange={handleLimitedChange}
+            maxLength={FIELD_LIMITS.college_name.max}
             placeholder="Enter your college or university name"
             autoComplete="off"
           />
+          {renderLengthError('college_name')}
         </div>
 
         <div className="form-group">
@@ -125,11 +152,12 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
             name="department_of_study"
             type="text"
             value={formData.department_of_study || ''}
-            onChange={handleDepartmentChange}
+            onChange={handleLimitedChange}
+            maxLength={FIELD_LIMITS.department_of_study.max}
             placeholder="e.g., Computer Science, Mechanical Engineering, Business Administration"
             autoComplete="off"
           />
-          {departmentError && <small className="input-error" style={{color: 'red'}}>{departmentError}</small>}
+          {renderLengthError('department_of_study')}
         </div>
 
         <div className="form-group">
@@ -164,11 +192,13 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
           name="contactNo"
           type="tel"
           value={formData.contactNo}
-          onChange={handleContactChange}
+          onChange={handleLimitedChange}
           onBlur={handleContactBlur}
+          maxLength={FIELD_LIMITS.contactNo.max}
           placeholder="Enter Your Phone Number"
           autoComplete="tel"
         />
+        {renderLengthError('contactNo')}
         {isCheckingPhone && <small className="input-hint">Checking phone number availability...</small>}
         {phoneDuplicateError && <small className="input-error" style={{ color: 'red' }}>{phoneDuplicateError}</small>}
         <small className="input-hint">We'll send a verification code to this number</small>
