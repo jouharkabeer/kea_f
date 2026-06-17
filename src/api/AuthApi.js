@@ -218,6 +218,22 @@ export const registerUser = async (userData, maxRetries = 2) => {
   // This should never be reached, but just in case
   throw lastError;
 };
+
+/**
+ * Send client-side registration errors to backend log file.
+ * Fire-and-forget helper; never throws to avoid affecting user flows.
+ */
+export const logClientRegistrationError = async (payload) => {
+  try {
+    await fetch(API_ENDPOINTS.AUTH.CLIENT_ERROR_LOG, {
+      method: 'POST',
+      headers: combineHeaders(),
+      body: JSON.stringify(payload || {})
+    });
+  } catch (error) {
+    // Intentionally swallow errors to keep app behavior unchanged.
+  }
+};
 /**
  * Get current user profile with enhanced debugging
  * @returns {Promise<Object>} - User profile data

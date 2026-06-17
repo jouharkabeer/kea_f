@@ -2,6 +2,7 @@ import React from 'react';
 import { FiBriefcase, FiUser, FiPhone, FiMapPin, FiDroplet, FiBookOpen, FiCalendar,  } from 'react-icons/fi';
 
 export const StepTwo = ({ formData, handleChange }) => {
+  const [departmentError, setDepartmentError] = React.useState('');
   const bloodGroups = [
     { value: '', label: 'Select Blood Group' },
     { value: 'A+', label: 'A+ (A Positive)' },
@@ -20,6 +21,25 @@ export const StepTwo = ({ formData, handleChange }) => {
   for (let year = currentYear; year >= currentYear - 79; year--) {
     yearOptions.push(year);
   }
+
+  const handleDepartmentChange = (e) => {
+    const { value } = e.target;
+    if (value.length > 30) {
+      setDepartmentError('Department of Study cannot exceed 30 characters.');
+      handleChange({
+        target: {
+          name: 'department_of_study',
+          value: value.slice(0, 30),
+        },
+      });
+      return;
+    }
+
+    if (departmentError) {
+      setDepartmentError('');
+    }
+    handleChange(e);
+  };
 
   return (
     <div className="form-step">
@@ -87,10 +107,11 @@ export const StepTwo = ({ formData, handleChange }) => {
             name="department_of_study"
             type="text"
             value={formData.department_of_study || ''}
-            onChange={handleChange}
+            onChange={handleDepartmentChange}
             placeholder="e.g., Computer Science, Mechanical Engineering, Business Administration"
             autoComplete="off"
           />
+          {departmentError && <small className="input-error">{departmentError}</small>}
         </div>
 
         <div className="form-group">

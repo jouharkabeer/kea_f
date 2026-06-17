@@ -6,7 +6,7 @@ import { StepOne } from './Step1';
 import { StepTwo } from './Step2';
 import { StepThree } from './Step3';
 import { useNavigate } from 'react-router-dom';
-import { registerUser } from '../../api/AuthApi';
+import { registerUser, logClientRegistrationError } from '../../api/AuthApi';
 import { sendOTP, verifyOTP } from '../../api/OtpApi';
 import { createRazorpayOrder, verifyPayment, initiateRazorpayCheckout } from '../../api/PaymentApi';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -69,6 +69,26 @@ function MultiStepRegister() {
   const [useCamera, setUseCamera] = useState(false);
   const [isFaceDetected, setIsFaceDetected] = useState(false);
 
+  const logRegistrationEvent = (eventName, details = {}, level = 'error') => {
+    const timestamp = new Date().toISOString();
+    const logEntry = {
+      timestamp,
+      event: eventName,
+      step: currentStep,
+      details,
+    };
+
+    const consolePrefix = `[Registration][${timestamp}] ${eventName}`;
+    if (level === 'warn') {
+      console.warn(consolePrefix, logEntry);
+    } else {
+      console.error(consolePrefix, logEntry);
+    }
+
+    // Fire-and-forget server log write; do not block registration flow.
+    void logClientRegistrationError(logEntry);
+  };
+
   // Change Handlers
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -100,6 +120,7 @@ function MultiStepRegister() {
     if (!formData.contactNo) {
       setErrorMessage('Please enter your Contact No first.');
       showError('Please enter your Contact No first.');
+      logRegistrationEvent('OTP_SEND_VALIDATION_FAILED', { reason: 'Missing contact number' }, 'warn');
       return;
     }
     
@@ -117,6 +138,10 @@ function MultiStepRegister() {
       
     } catch (error) {
       console.error('Error sending OTP:', error);
+      logRegistrationEvent('OTP_SEND_FAILED', {
+        contactNo: formData.contactNo,
+        message: error?.error || error?.message || 'Unknown OTP send error',
+      });
       
       const errorDetail = error.error || 'Failed to send OTP. Please try again.';
       setErrorMessage(errorDetail);
@@ -130,6 +155,7 @@ function MultiStepRegister() {
     if (!formData.otp) {
       setErrorMessage('Please enter the OTP.');
       showError('Please enter the OTP.');
+      logRegistrationEvent('OTP_VERIFY_VALIDATION_FAILED', { reason: 'Missing OTP' }, 'warn');
       return;
     }
     
@@ -153,6 +179,11 @@ function MultiStepRegister() {
       success('Phone number verified successfully!');
     } catch (error) {
       console.error('Error verifying OTP:', error);
+      logRegistrationEvent('OTP_VERIFY_FAILED', {
+        contactNo: formData.contactNo,
+        verificationId,
+        message: error?.error || error?.message || 'Unknown OTP verification error',
+      });
       
       const errorDetail = error.error || 'Failed to verify OTP. Please try again.';
       setErrorMessage(errorDetail);
@@ -294,6 +325,10 @@ function MultiStepRegister() {
       
     } catch (error) {
       console.error('Payment verification failed:', error);
+      logRegistrationEvent('PAYMENT_VERIFICATION_FAILED', {
+        userId: userId || paymentResponse?.user_id,
+        message: error?.details || error?.message || 'Unknown payment verification error',
+      });
       
       const errorDetail = error.details || error.message || 'Payment verification failed';
       setErrorMessage(`Payment verification failed: ${errorDetail}`);
@@ -346,6 +381,10 @@ function MultiStepRegister() {
         // Error callback
         (errorMsg) => {
           console.error('Razorpay checkout failed:', errorMsg);
+          logRegistrationEvent('PAYMENT_CHECKOUT_FAILED', {
+            userId,
+            message: errorMsg || 'Unknown checkout error',
+          });
           setErrorMessage(`Payment failed: ${errorMsg}`);
           showError(`Payment failed: ${errorMsg}`);
           setIsLoading(false);
@@ -353,6 +392,10 @@ function MultiStepRegister() {
       );
     } catch (error) {
       console.error('Payment initiation error:', error);
+      logRegistrationEvent('PAYMENT_INITIATION_FAILED', {
+        userId,
+        message: error?.error || error?.message || 'Unknown payment initiation error',
+      });
       const errorDetail = error.error || error.message || 'Could not create payment order';
       setErrorMessage(`Payment initiation failed: ${errorDetail}`);
       showError(`Payment initiation failed: ${errorDetail}`);
@@ -382,12 +425,14 @@ function MultiStepRegister() {
     if (!isContactVerified) {
       setErrorMessage('Please verify your contact number before proceeding.');
       showError('Please verify your contact number before proceeding.');
+      logRegistrationEvent('REGISTER_VALIDATION_FAILED', { reason: 'Contact not verified' }, 'warn');
       return;
     }
     
     if (!formData.terms) {
       setErrorMessage('Please agree to the Terms and Conditions before proceeding.');
       showError('Please agree to the Terms and Conditions before proceeding.');
+      logRegistrationEvent('REGISTER_VALIDATION_FAILED', { reason: 'Terms not accepted' }, 'warn');
       return;
     }
     
@@ -481,7 +526,6 @@ function MultiStepRegister() {
       
     } catch (error) {
       console.error('Registration error:', error);
-      alert("error: " + JSON.stringify(error));
       
       // Determine error type and provide user-friendly messages
       const isNetworkError = error.isNetworkError === true || 
@@ -527,13 +571,15 @@ function MultiStepRegister() {
       setIsLoading(false);
       
       // Log detailed error for debugging
-      console.error('Registration failed:', {
+      const registrationErrorDetails = {
         errorType: isNetworkError ? 'Network' : 'Server',
         status: error.status,
         attempts: attempts,
         message: error.message,
         originalError: error.originalError
-      });
+      };
+      console.error('Registration failed:', registrationErrorDetails);
+      logRegistrationEvent('REGISTER_FAILED', registrationErrorDetails);
     }
   };
 
