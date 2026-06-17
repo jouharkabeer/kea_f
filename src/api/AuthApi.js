@@ -59,12 +59,17 @@ export const loginUser = async (identifier, password) => {
  * @returns {Promise<Response>} - Fetch response
  */
 const fetchWithTimeout = (url, config, timeout = 60000) => {
-  return Promise.race([
-    fetch(url, config),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout')), timeout)
-    )
-  ]);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  return fetch(url, { ...config, signal: controller.signal })
+    .finally(() => clearTimeout(timeoutId))
+    .catch((error) => {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      throw error;
+    });
 };
 
 /**
@@ -75,6 +80,8 @@ const fetchWithTimeout = (url, config, timeout = 60000) => {
  */
 export const registerUser = async (userData, maxRetries = 2) => {
   let lastError;
+  const isFormDataUpload = userData instanceof FormData;
+  const requestTimeout = isFormDataUpload ? 180000 : 90000;
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -91,11 +98,10 @@ export const registerUser = async (userData, maxRetries = 2) => {
         requestConfig.body = JSON.stringify(userData);
       }
 
-      // Use fetch with timeout (60 seconds)
       const response = await fetchWithTimeout(
         API_ENDPOINTS.AUTH.REGISTER, 
         requestConfig,
-        60000 // 60 second timeout
+        requestTimeout
       );
       
       // Check if response is ok before parsing JSON
@@ -203,7 +209,9 @@ export const registerUser = async (userData, maxRetries = 2) => {
           originalError: error,
           status: error.status || 'NETWORK_ERROR',
           isNetworkError: isNetworkError,
-          attempts: attempt + 1
+          attempts: attempt + 1,
+          errorName: error?.name,
+          errorCause: error?.message,
         };
       }
       

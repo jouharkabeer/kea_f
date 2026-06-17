@@ -11,6 +11,7 @@ import { sendOTP, verifyOTP } from '../../api/OtpApi';
 import { createRazorpayOrder, verifyPayment, initiateRazorpayCheckout } from '../../api/PaymentApi';
 import { useNotification } from '../../contexts/NotificationContext';
 import { validateStepOne } from './Step1';
+import { compressImageFile, compressDataUrl } from '../../utils/imageCompression';
 
 function MultiStepRegister() {
   const navigate = useNavigate();
@@ -525,13 +526,15 @@ function MultiStepRegister() {
         formDataPayload.append('year_of_graduation', formData.year_of_graduation || '');
         formDataPayload.append('password', formData.password);
         
+        let profileFile = null;
         if (formData.photoFile) {
-          formDataPayload.append('profile_picture', formData.photoFile);
+          profileFile = await compressImageFile(formData.photoFile);
         } else if (formData.selfieImage) {
-          const response = await fetch(formData.selfieImage);
-          const blob = await response.blob();
-          const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
-          formDataPayload.append('profile_picture', file);
+          profileFile = await compressDataUrl(formData.selfieImage);
+        }
+
+        if (profileFile) {
+          formDataPayload.append('profile_picture', profileFile);
         }
         
         response = await registerUser(formDataPayload);
@@ -638,7 +641,9 @@ function MultiStepRegister() {
         status: error.status,
         attempts: attempts,
         message: error.message,
-        originalError: error.originalError
+        errorName: error.errorName || error.name,
+        errorCause: error.errorCause,
+        originalError: error.originalError,
       };
       console.error('Registration failed:', registrationErrorDetails);
       logRegistrationEvent('REGISTER_FAILED', registrationErrorDetails);
