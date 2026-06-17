@@ -111,7 +111,7 @@ export const StepTwo = ({ formData, handleChange }) => {
             placeholder="e.g., Computer Science, Mechanical Engineering, Business Administration"
             autoComplete="off"
           />
-          {departmentError && <small className="input-error">{departmentError}</small>}
+          {departmentError && <small className="input-error" style={{color: 'red'}}>{departmentError}</small>}
         </div>
 
         <div className="form-group">
