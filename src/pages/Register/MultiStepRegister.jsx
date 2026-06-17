@@ -11,7 +11,7 @@ import { sendOTP, verifyOTP } from '../../api/OtpApi';
 import { createRazorpayOrder, verifyPayment, initiateRazorpayCheckout } from '../../api/PaymentApi';
 import { useNotification } from '../../contexts/NotificationContext';
 import { validateStepOne } from './Step1';
-import { compressImageFile, compressDataUrl } from '../../utils/imageCompression';
+import { prepareProfileImageForUpload, prepareDataUrlForUpload } from '../../utils/imageCompression';
 
 function MultiStepRegister() {
   const navigate = useNavigate();
@@ -96,12 +96,15 @@ function MultiStepRegister() {
       timestamp,
       event: eventName,
       step: currentStep,
+      level,
       context: getRegistrationLogContext(),
       details,
     };
 
     const consolePrefix = `[Registration][${timestamp}] ${eventName}`;
-    if (level === 'warn') {
+    if (level === 'info') {
+      console.info(consolePrefix, logEntry);
+    } else if (level === 'warn') {
       console.warn(consolePrefix, logEntry);
     } else {
       console.error(consolePrefix, logEntry);
@@ -576,6 +579,7 @@ function MultiStepRegister() {
     }
 
     let compressedProfileSizeKb = null;
+    let imageUploadStrategy = null;
 
     try {
       let response;
@@ -602,11 +606,15 @@ function MultiStepRegister() {
         formDataPayload.append('password', formData.password);
         
         let profileFile = null;
+        let imagePrepResult = null;
         if (formData.photoFile) {
-          profileFile = await compressImageFile(formData.photoFile);
+          imagePrepResult = await prepareProfileImageForUpload(formData.photoFile);
         } else if (formData.selfieImage) {
-          profileFile = await compressDataUrl(formData.selfieImage);
+          imagePrepResult = await prepareDataUrlForUpload(formData.selfieImage);
         }
+
+        profileFile = imagePrepResult?.file || null;
+        imageUploadStrategy = imagePrepResult?.strategy || null;
 
         if (profileFile) {
           compressedProfileSizeKb = Math.round(profileFile.size / 1024);
@@ -616,8 +624,11 @@ function MultiStepRegister() {
         logRegistrationEvent('REGISTER_REQUEST_START', {
           uploadType: 'multipart',
           compressedProfileSizeKb,
+          imageUploadStrategy,
+          originalPhotoSizeKb: imagePrepResult?.originalSizeKb ?? null,
+          fallbackReason: imagePrepResult?.fallbackReason ?? null,
           phoneNumberLength: normalizedPhone.length,
-        }, 'warn');
+        }, 'info');
 
         response = await registerUser(formDataPayload);
         
@@ -642,7 +653,7 @@ function MultiStepRegister() {
         logRegistrationEvent('REGISTER_REQUEST_START', {
           uploadType: 'json',
           phoneNumberLength: normalizedPhone.length,
-        }, 'warn');
+        }, 'info');
 
         response = await registerUser(payload);
       }
@@ -700,10 +711,12 @@ function MultiStepRegister() {
           errorMsg = 'Network connection error';
         }
         
-        // Add retry suggestion if multiple attempts were made
         if (attempts > 1) {
           userMessage += ` (Attempted ${attempts} times)`;
         }
+      } else if (error.message?.includes('image') || error.message?.includes('photo') || error.message?.includes('compression')) {
+        userMessage = 'Unable to process your profile photo. Please try taking a new picture or upload a JPG/PNG file under 5MB.';
+        errorMsg = error.message || 'Image processing failed';
       } else if (error.status >= 500) {
         // Server error
         userMessage = 'Server error occurred. Our team has been notified. Please try again in a few moments.';
@@ -733,6 +746,7 @@ function MultiStepRegister() {
         requestTimeoutMs: error.requestTimeoutMs,
         uploadType: error.isFormDataUpload ? 'multipart' : 'json',
         compressedProfileSizeKb: error.compressedProfileSizeKb ?? compressedProfileSizeKb,
+        imageUploadStrategy: imageUploadStrategy,
         originalError: error.originalError,
       };
       console.error('Registration failed:', registrationErrorDetails);

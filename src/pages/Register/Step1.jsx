@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FiCamera, FiUpload, FiCheckCircle, FiAlertTriangle, FiXCircle, FiRefreshCw, FiUser, FiEye, FiEyeOff } from "react-icons/fi";
 import Webcam from "react-webcam";
 // import * as faceapi from "face-api.js";
+import { isImageFile } from "../../utils/imageCompression";
 import { useNotification } from "../../contexts/NotificationContext";
 
 const FIELD_LIMITS = {
@@ -219,9 +220,8 @@ export const StepOne = ({
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        safeError("Please select a valid image file");
+      if (!isImageFile(file)) {
+        safeError("Please select a valid image file (JPG, PNG, or WEBP)");
         return;
       }
       
