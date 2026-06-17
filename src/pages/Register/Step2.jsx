@@ -1,8 +1,9 @@
 import React from 'react';
 import { FiBriefcase, FiUser, FiPhone, FiMapPin, FiDroplet, FiBookOpen, FiCalendar,  } from 'react-icons/fi';
 
-export const StepTwo = ({ formData, handleChange }) => {
+export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPhoneAvailabilityCheck }) => {
   const [departmentError, setDepartmentError] = React.useState('');
+  const [isCheckingPhone, setIsCheckingPhone] = React.useState(false);
   const bloodGroups = [
     { value: '', label: 'Select Blood Group' },
     { value: 'A+', label: 'A+ (A Positive)' },
@@ -39,6 +40,23 @@ export const StepTwo = ({ formData, handleChange }) => {
       setDepartmentError('');
     }
     handleChange(e);
+  };
+
+  const handleContactChange = (e) => {
+    handleChange(e);
+  };
+
+  const handleContactBlur = async () => {
+    if (!formData.contactNo || !onPhoneAvailabilityCheck) {
+      return;
+    }
+
+    setIsCheckingPhone(true);
+    try {
+      await onPhoneAvailabilityCheck(formData.contactNo);
+    } finally {
+      setIsCheckingPhone(false);
+    }
   };
 
   return (
@@ -146,10 +164,13 @@ export const StepTwo = ({ formData, handleChange }) => {
           name="contactNo"
           type="tel"
           value={formData.contactNo}
-          onChange={handleChange}
+          onChange={handleContactChange}
+          onBlur={handleContactBlur}
           placeholder="Enter Your Phone Number"
           autoComplete="tel"
         />
+        {isCheckingPhone && <small className="input-hint">Checking phone number availability...</small>}
+        {phoneDuplicateError && <small className="input-error" style={{ color: 'red' }}>{phoneDuplicateError}</small>}
         <small className="input-hint">We'll send a verification code to this number</small>
       </div>
       

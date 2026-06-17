@@ -234,6 +234,60 @@ export const logClientRegistrationError = async (payload) => {
     // Intentionally swallow errors to keep app behavior unchanged.
   }
 };
+
+/**
+ * Check if a user already exists with the given email or phone number.
+ * @param {{ email?: string, phone_number?: string }} params
+ * @returns {Promise<{ exists: boolean, fields?: string[], message?: string }>}
+ */
+export const checkUserExists = async ({ email, phone_number } = {}) => {
+  const response = await fetch(API_ENDPOINTS.AUTH.CHECK_USER_EXISTS, {
+    method: 'POST',
+    headers: combineHeaders(),
+    body: JSON.stringify({
+      email: email || null,
+      phone_number: phone_number || null,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw data;
+  }
+
+  return data;
+};
+
+export const cleanPhoneNumber = (number) => {
+  if (!number) return null;
+  let cleanNum = String(number).replace(/\D/g, '');
+  if (cleanNum.startsWith('91') && cleanNum.length > 10) {
+    cleanNum = cleanNum.slice(2);
+  }
+  return cleanNum.length === 10 ? cleanNum : null;
+};
+
+export const isEmailRegistered = async (email) => {
+  const trimmed = email?.trim();
+  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    return false;
+  }
+
+  const result = await checkUserExists({ email: trimmed });
+  return Boolean(result.exists && result.fields?.includes('email'));
+};
+
+export const isPhoneRegistered = async (phone) => {
+  const cleaned = cleanPhoneNumber(phone);
+  if (!cleaned) {
+    return false;
+  }
+
+  const result = await checkUserExists({ phone_number: cleaned });
+  return Boolean(result.exists && result.fields?.includes('phone_number'));
+};
+
 /**
  * Get current user profile with enhanced debugging
  * @returns {Promise<Object>} - User profile data

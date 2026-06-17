@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
     TEST_OTP: `${BASE_URL}/auth/test-otp/`,
     OTP_VERIFY: `${BASE_URL}/auth/otpverify/`,
     CLIENT_ERROR_LOG: `${BASE_URL}/auth/client-error-log/`,
+    CHECK_USER_EXISTS: `${BASE_URL}/auth/check-user-exists/`,
   },
   
   // User endpoints

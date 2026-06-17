@@ -6,7 +6,7 @@ import { StepOne } from './Step1';
 import { StepTwo } from './Step2';
 import { StepThree } from './Step3';
 import { useNavigate } from 'react-router-dom';
-import { registerUser, logClientRegistrationError } from '../../api/AuthApi';
+import { registerUser, logClientRegistrationError, isEmailRegistered, isPhoneRegistered } from '../../api/AuthApi';
 import { sendOTP, verifyOTP } from '../../api/OtpApi';
 import { createRazorpayOrder, verifyPayment, initiateRazorpayCheckout } from '../../api/PaymentApi';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -65,6 +65,8 @@ function MultiStepRegister() {
   });
 
   const [isContactVerified, setIsContactVerified] = useState(false);
+  const [emailDuplicateError, setEmailDuplicateError] = useState('');
+  const [phoneDuplicateError, setPhoneDuplicateError] = useState('');
   const webcamRef = useRef(null);
   const [useCamera, setUseCamera] = useState(false);
   const [isFaceDetected, setIsFaceDetected] = useState(false);
@@ -96,6 +98,14 @@ function MultiStepRegister() {
     
     if (errorMessage) {
       setErrorMessage('');
+    }
+
+    if (name === 'email' && emailDuplicateError) {
+      setEmailDuplicateError('');
+    }
+
+    if (name === 'contactNo' && phoneDuplicateError) {
+      setPhoneDuplicateError('');
     }
   };
 
@@ -193,8 +203,40 @@ function MultiStepRegister() {
     }
   };
 
+  const handleEmailAvailabilityCheck = async (email) => {
+    const message = 'This email is already registered. Please use a different email or log in.';
+    try {
+      const exists = await isEmailRegistered(email);
+      if (exists) {
+        setEmailDuplicateError(message);
+        return false;
+      }
+      setEmailDuplicateError('');
+      return true;
+    } catch (error) {
+      console.error('Email availability check failed:', error);
+      return true;
+    }
+  };
+
+  const handlePhoneAvailabilityCheck = async (phone) => {
+    const message = 'This phone number is already registered. Please use a different number or log in.';
+    try {
+      const exists = await isPhoneRegistered(phone);
+      if (exists) {
+        setPhoneDuplicateError(message);
+        return false;
+      }
+      setPhoneDuplicateError('');
+      return true;
+    } catch (error) {
+      console.error('Phone availability check failed:', error);
+      return true;
+    }
+  };
+
   // Navigation functions
-  const handleNext = () => {
+  const handleNext = async () => {
     setErrorMessage('');
     
     if (currentStep === 1) {
@@ -226,6 +268,16 @@ function MultiStepRegister() {
       if (!formData.email) {
         setErrorMessage('Please enter your email address.');
         showError('Please enter your email address.');
+        return;
+      }
+
+      setIsLoading(true);
+      const isEmailAvailable = await handleEmailAvailabilityCheck(formData.email);
+      setIsLoading(false);
+      if (!isEmailAvailable) {
+        const msg = 'This email is already registered. Please use a different email or log in.';
+        setErrorMessage(msg);
+        showError(msg);
         return;
       }
       
@@ -274,6 +326,16 @@ function MultiStepRegister() {
       if (!formData.contactNo) {
         setErrorMessage('Please fill out your Contact Number.');
         showError('Please fill out your Contact Number.');
+        return;
+      }
+
+      setIsLoading(true);
+      const isPhoneAvailable = await handlePhoneAvailabilityCheck(formData.contactNo);
+      setIsLoading(false);
+      if (!isPhoneAvailable) {
+        const msg = 'This phone number is already registered. Please use a different number or log in.';
+        setErrorMessage(msg);
+        showError(msg);
         return;
       }
     }
@@ -621,6 +683,8 @@ function MultiStepRegister() {
             handleToggleCamera={handleToggleCamera}
             handleCapturePhoto={handleCapturePhoto} 
             onFaceDetectionUpdate={handleFaceDetectionUpdate}
+            emailDuplicateError={emailDuplicateError}
+            onEmailAvailabilityCheck={handleEmailAvailabilityCheck}
           />
         )}
         
@@ -628,6 +692,8 @@ function MultiStepRegister() {
           <StepTwo 
             formData={formData} 
             handleChange={handleChange}
+            phoneDuplicateError={phoneDuplicateError}
+            onPhoneAvailabilityCheck={handlePhoneAvailabilityCheck}
           />
         )}
         

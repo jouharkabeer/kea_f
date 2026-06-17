@@ -13,12 +13,15 @@ export const StepOne = ({
   webcamRef,
   handleCapturePhoto,
   onFaceDetectionUpdate,
+  emailDuplicateError = '',
+  onEmailAvailabilityCheck,
 }) => {
   const [faceDetected, setFaceDetected] = useState(false);
   const [previewImage, setPreviewImage] = useState(formData.selfieImage || null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [passwordValidation, setPasswordValidation] = useState({
     minLength: false,
     hasUppercase: false,
@@ -113,6 +116,24 @@ export const StepOne = ({
     
     // Call the parent change handler
     handleChange(e);
+  };
+
+  const handleEmailChange = (e) => {
+    handleChange(e);
+  };
+
+  const handleEmailBlur = async () => {
+    const email = formData.email?.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !onEmailAvailabilityCheck) {
+      return;
+    }
+
+    setIsCheckingEmail(true);
+    try {
+      await onEmailAvailabilityCheck(email);
+    } finally {
+      setIsCheckingEmail(false);
+    }
   };
   
   // Check if user can proceed to next step
@@ -299,11 +320,14 @@ export const StepOne = ({
           name="email"
           type="email"
           value={formData.email}
-          onChange={handleChange}
+          onChange={handleEmailChange}
+          onBlur={handleEmailBlur}
           placeholder="Enter Email"
           autoComplete="email"
           required
         />
+        {isCheckingEmail && <small className="input-hint">Checking email availability...</small>}
+        {emailDuplicateError && <small className="input-error" style={{ color: 'red' }}>{emailDuplicateError}</small>}
       </div>
 
       <div className="form-group photo-upload-section">
