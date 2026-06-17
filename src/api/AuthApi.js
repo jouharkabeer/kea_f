@@ -78,10 +78,10 @@ const fetchWithTimeout = (url, config, timeout = 60000) => {
  * @param {number} maxRetries - Maximum number of retries (default: 2)
  * @returns {Promise<Object>} - Contains user data and possibly a token
  */
-export const registerUser = async (userData, maxRetries = 2) => {
+export const registerUser = async (userData, maxRetries = 3) => {
   let lastError;
   const isFormDataUpload = userData instanceof FormData;
-  const requestTimeout = isFormDataUpload ? 180000 : 90000;
+  const requestTimeout = isFormDataUpload ? 240000 : 120000;
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -212,6 +212,8 @@ export const registerUser = async (userData, maxRetries = 2) => {
           attempts: attempt + 1,
           errorName: error?.name,
           errorCause: error?.message,
+          requestTimeoutMs: requestTimeout,
+          isFormDataUpload,
         };
       }
       
@@ -249,22 +251,35 @@ export const logClientRegistrationError = async (payload) => {
  * @returns {Promise<{ exists: boolean, fields?: string[], message?: string }>}
  */
 export const checkUserExists = async ({ email, phone_number } = {}) => {
-  const response = await fetch(API_ENDPOINTS.AUTH.CHECK_USER_EXISTS, {
-    method: 'POST',
-    headers: combineHeaders(),
-    body: JSON.stringify({
-      email: email || null,
-      phone_number: phone_number || null,
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  const data = await response.json();
+  try {
+    const response = await fetch(API_ENDPOINTS.AUTH.CHECK_USER_EXISTS, {
+      method: 'POST',
+      headers: combineHeaders(),
+      body: JSON.stringify({
+        email: email || null,
+        phone_number: phone_number || null,
+      }),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    throw data;
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw data;
+    }
+
+    return data;
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw { message: 'Availability check timed out', status: 'NETWORK_ERROR' };
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return data;
 };
 
 export const cleanPhoneNumber = (number) => {

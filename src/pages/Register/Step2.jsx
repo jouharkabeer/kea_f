@@ -40,25 +40,29 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
       return;
     }
 
-    if (value.length > limit.max) {
+    const trimmedValue = value.length > limit.max ? value.slice(0, limit.max) : value;
+
+    if (trimmedValue.length >= limit.max) {
       setLengthErrors((prev) => ({
         ...prev,
-        [name]: `${limit.label} cannot exceed ${limit.max} characters.`,
+        [name]: `${limit.label} has reached the maximum of ${limit.max} characters.`,
       }));
-      handleChange({
-        target: { name, value: value.slice(0, limit.max) },
+    } else {
+      setLengthErrors((prev) => {
+        if (!prev[name]) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[name];
+        return next;
       });
+    }
+
+    if (trimmedValue !== value) {
+      handleChange({ target: { name, value: trimmedValue } });
       return;
     }
 
-    setLengthErrors((prev) => {
-      if (!prev[name]) {
-        return prev;
-      }
-      const next = { ...prev };
-      delete next[name];
-      return next;
-    });
     handleChange(e);
   };
 
@@ -68,13 +72,14 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
     ) : null;
 
   const handleContactBlur = async () => {
-    if (!formData.contactNo || !onPhoneAvailabilityCheck) {
+    const normalizedPhone = formData.contactNo?.trim();
+    if (!normalizedPhone || !onPhoneAvailabilityCheck) {
       return;
     }
 
     setIsCheckingPhone(true);
     try {
-      await onPhoneAvailabilityCheck(formData.contactNo);
+      await onPhoneAvailabilityCheck(normalizedPhone);
     } finally {
       setIsCheckingPhone(false);
     }

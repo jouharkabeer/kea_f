@@ -6,7 +6,7 @@ import { StepOne } from './Step1';
 import { StepTwo } from './Step2';
 import { StepThree } from './Step3';
 import { useNavigate } from 'react-router-dom';
-import { registerUser, logClientRegistrationError, isEmailRegistered, isPhoneRegistered } from '../../api/AuthApi';
+import { registerUser, logClientRegistrationError, isEmailRegistered, isPhoneRegistered, cleanPhoneNumber } from '../../api/AuthApi';
 import { sendOTP, verifyOTP } from '../../api/OtpApi';
 import { createRazorpayOrder, verifyPayment, initiateRazorpayCheckout } from '../../api/PaymentApi';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -72,12 +72,31 @@ function MultiStepRegister() {
   const [useCamera, setUseCamera] = useState(false);
   const [isFaceDetected, setIsFaceDetected] = useState(false);
 
+  const getRegistrationLogContext = () => {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
+    return {
+      online: navigator.onLine,
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      connectionType: connection?.effectiveType || null,
+      downlinkMbps: connection?.downlink ?? null,
+      rttMs: connection?.rtt ?? null,
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      emailDomain: formData.email?.split('@')[1] || null,
+      hasPhotoFile: Boolean(formData.photoFile),
+      hasSelfie: Boolean(formData.selfieImage),
+      photoFileSizeKb: formData.photoFile ? Math.round(formData.photoFile.size / 1024) : null,
+    };
+  };
+
   const logRegistrationEvent = (eventName, details = {}, level = 'error') => {
     const timestamp = new Date().toISOString();
     const logEntry = {
       timestamp,
       event: eventName,
       step: currentStep,
+      context: getRegistrationLogContext(),
       details,
     };
 
@@ -88,9 +107,10 @@ function MultiStepRegister() {
       console.error(consolePrefix, logEntry);
     }
 
-    // Fire-and-forget server log write; do not block registration flow.
     void logClientRegistrationError(logEntry);
   };
+
+  const getNormalizedPhone = () => cleanPhoneNumber(formData.contactNo) || formData.contactNo?.trim() || '';
 
   // Change Handlers
   const handleChange = (e) => {
@@ -128,7 +148,8 @@ function MultiStepRegister() {
   
   // OTP Functions
   const handleSendOTP = async () => {
-    if (!formData.contactNo) {
+    const normalizedPhone = getNormalizedPhone();
+    if (!normalizedPhone) {
       setErrorMessage('Please enter your Contact No first.');
       showError('Please enter your Contact No first.');
       logRegistrationEvent('OTP_SEND_VALIDATION_FAILED', { reason: 'Missing contact number' }, 'warn');
@@ -139,7 +160,7 @@ function MultiStepRegister() {
     setErrorMessage('');
     
     try {
-      const data = await sendOTP(formData.contactNo);
+      const data = await sendOTP(normalizedPhone);
       // console.log('OTP response:', data);
       
       if (data.verification_id) {
@@ -175,7 +196,7 @@ function MultiStepRegister() {
     
     try {
       const payload = { 
-        phone_number: formData.contactNo,
+        phone_number: getNormalizedPhone(),
         otp: formData.otp
       };
       
@@ -206,6 +227,7 @@ function MultiStepRegister() {
 
   const handleEmailAvailabilityCheck = async (email) => {
     const message = 'This email is already registered. Please use a different email or log in.';
+    const checkFailedMessage = 'Unable to verify email availability. Please check your connection and try again.';
     try {
       const exists = await isEmailRegistered(email);
       if (exists) {
@@ -216,14 +238,21 @@ function MultiStepRegister() {
       return true;
     } catch (error) {
       console.error('Email availability check failed:', error);
-      return true;
+      setEmailDuplicateError(checkFailedMessage);
+      logRegistrationEvent('EMAIL_AVAILABILITY_CHECK_FAILED', {
+        emailDomain: email?.split('@')[1] || null,
+        message: error?.error || error?.message || 'Unknown email check error',
+      }, 'warn');
+      return false;
     }
   };
 
   const handlePhoneAvailabilityCheck = async (phone) => {
     const message = 'This phone number is already registered. Please use a different number or log in.';
+    const checkFailedMessage = 'Unable to verify phone number availability. Please check your connection and try again.';
+    const normalizedPhone = cleanPhoneNumber(phone) || phone?.trim();
     try {
-      const exists = await isPhoneRegistered(phone);
+      const exists = await isPhoneRegistered(normalizedPhone);
       if (exists) {
         setPhoneDuplicateError(message);
         return false;
@@ -232,7 +261,11 @@ function MultiStepRegister() {
       return true;
     } catch (error) {
       console.error('Phone availability check failed:', error);
-      return true;
+      setPhoneDuplicateError(checkFailedMessage);
+      logRegistrationEvent('PHONE_AVAILABILITY_CHECK_FAILED', {
+        message: error?.error || error?.message || 'Unknown phone check error',
+      }, 'warn');
+      return false;
     }
   };
 
@@ -241,6 +274,12 @@ function MultiStepRegister() {
     setErrorMessage('');
     
     if (currentStep === 1) {
+      if (emailDuplicateError) {
+        setErrorMessage(emailDuplicateError);
+        showError(emailDuplicateError);
+        return;
+      }
+
       const validation = validateStepOne(formData, isFaceDetected);
       
       if (!validation.isValid) {
@@ -324,17 +363,35 @@ function MultiStepRegister() {
     }
     
     if (currentStep === 2) {
-      if (!formData.contactNo) {
+      if (phoneDuplicateError) {
+        setErrorMessage(phoneDuplicateError);
+        showError(phoneDuplicateError);
+        return;
+      }
+
+      const normalizedPhone = getNormalizedPhone();
+      if (!normalizedPhone) {
         setErrorMessage('Please fill out your Contact Number.');
         showError('Please fill out your Contact Number.');
         return;
       }
 
       setIsLoading(true);
-      const isPhoneAvailable = await handlePhoneAvailabilityCheck(formData.contactNo);
+      const [isEmailAvailable, isPhoneAvailable] = await Promise.all([
+        handleEmailAvailabilityCheck(formData.email),
+        handlePhoneAvailabilityCheck(normalizedPhone),
+      ]);
       setIsLoading(false);
+
+      if (!isEmailAvailable) {
+        const msg = emailDuplicateError || 'This email is already registered. Please use a different email or log in.';
+        setErrorMessage(msg);
+        showError(msg);
+        return;
+      }
+
       if (!isPhoneAvailable) {
-        const msg = 'This phone number is already registered. Please use a different number or log in.';
+        const msg = phoneDuplicateError || 'This phone number is already registered. Please use a different number or log in.';
         setErrorMessage(msg);
         showError(msg);
         return;
@@ -502,6 +559,24 @@ function MultiStepRegister() {
     setIsLoading(true);
     setErrorMessage('');
 
+    const normalizedPhone = getNormalizedPhone();
+    const [isEmailAvailable, isPhoneAvailable] = await Promise.all([
+      handleEmailAvailabilityCheck(formData.email),
+      handlePhoneAvailabilityCheck(normalizedPhone),
+    ]);
+
+    if (!isEmailAvailable || !isPhoneAvailable) {
+      const msg = !isEmailAvailable
+        ? (emailDuplicateError || 'This email is already registered. Please use a different email or log in.')
+        : (phoneDuplicateError || 'This phone number is already registered. Please use a different number or log in.');
+      setErrorMessage(msg);
+      showError(msg);
+      setIsLoading(false);
+      return;
+    }
+
+    let compressedProfileSizeKb = null;
+
     try {
       let response;
       const hasProfilePicture = formData.photoFile || formData.selfieImage;
@@ -514,7 +589,7 @@ function MultiStepRegister() {
         formDataPayload.append('user_type', 'member');
         formDataPayload.append('username', validUsername);
         formDataPayload.append('email', formData.email);
-        formDataPayload.append('phone_number', formData.contactNo);
+        formDataPayload.append('phone_number', normalizedPhone);
         formDataPayload.append('company_name', formData.companyName || '');
         formDataPayload.append('designation', formData.designation || '');
         formDataPayload.append('address', formData.address || '');
@@ -534,9 +609,16 @@ function MultiStepRegister() {
         }
 
         if (profileFile) {
+          compressedProfileSizeKb = Math.round(profileFile.size / 1024);
           formDataPayload.append('profile_picture', profileFile);
         }
         
+        logRegistrationEvent('REGISTER_REQUEST_START', {
+          uploadType: 'multipart',
+          compressedProfileSizeKb,
+          phoneNumberLength: normalizedPhone.length,
+        }, 'warn');
+
         response = await registerUser(formDataPayload);
         
       } else {
@@ -544,7 +626,7 @@ function MultiStepRegister() {
           user_type: 'member',
           username: validUsername, 
           email: formData.email,
-          phone_number: formData.contactNo,
+          phone_number: normalizedPhone,
           company_name: formData.companyName || '',
           designation: formData.designation || '',
           address: formData.address || '',
@@ -557,6 +639,11 @@ function MultiStepRegister() {
           password: formData.password
         };
         
+        logRegistrationEvent('REGISTER_REQUEST_START', {
+          uploadType: 'json',
+          phoneNumberLength: normalizedPhone.length,
+        }, 'warn');
+
         response = await registerUser(payload);
       }
       
@@ -643,6 +730,9 @@ function MultiStepRegister() {
         message: error.message,
         errorName: error.errorName || error.name,
         errorCause: error.errorCause,
+        requestTimeoutMs: error.requestTimeoutMs,
+        uploadType: error.isFormDataUpload ? 'multipart' : 'json',
+        compressedProfileSizeKb: error.compressedProfileSizeKb ?? compressedProfileSizeKb,
         originalError: error.originalError,
       };
       console.error('Registration failed:', registrationErrorDetails);
@@ -732,7 +822,11 @@ function MultiStepRegister() {
               type="button" 
               className="nav-button next" 
               onClick={handleNext}
-              disabled={isLoading}
+              disabled={
+                isLoading ||
+                (currentStep === 1 && Boolean(emailDuplicateError)) ||
+                (currentStep === 2 && Boolean(phoneDuplicateError))
+              }
             >
               {isLoading ? 'Processing...' : 'Save & Continue'}
             </button>

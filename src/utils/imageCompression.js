@@ -43,14 +43,14 @@ const canvasToJpegFile = (canvas, fileName, quality) =>
  */
 export const compressImageFile = async (
   file,
-  { maxWidth = 1280, maxHeight = 1280, quality = 0.82, maxSizeBytes = 800 * 1024 } = {}
+  { maxWidth = 1024, maxHeight = 1024, quality = 0.78, maxSizeBytes = 500 * 1024 } = {}
 ) => {
   if (!file || !file.type?.startsWith('image/')) {
     return file;
   }
 
   // Always compress larger uploads; mobile camera photos are often 2-8MB.
-  if (file.size <= 400 * 1024 && file.type === 'image/jpeg') {
+  if (file.size <= 250 * 1024 && file.type === 'image/jpeg') {
     return file;
   }
 
