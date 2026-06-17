@@ -1,101 +1,60 @@
 import { useState } from 'react';
 import { FiSend, FiCheckCircle, FiShield, FiInfo, FiLock, FiFileText } from 'react-icons/fi';
-import { useNotification } from '../../contexts/NotificationContext';
+import { FieldMessage } from './FieldMessage';
 
 export const StepThree = ({
   formData,
+  fieldErrors = {},
   handleChange,
-  handleSendOTP: parentHandleSendOTP,
-  handleVerifyOTP: parentHandleVerifyOTP,
+  handleSendOTP,
+  handleVerifyOTP,
   isContactVerified,
   isLoading: parentIsLoading,
-  handleBack,
-  handleRegister
 }) => {
-  const { success, error, info } = useNotification();
-
-  // Create separate loading states for each button
   const [isSendingOTP, setIsSendingOTP] = useState(false);
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Send OTP with notification feedback
-  const handleSendOTP = async () => {
-    if (isSendingOTP) return;
-    
+
+  const onSendOTP = async () => {
+    if (isSendingOTP || isContactVerified) return;
     setIsSendingOTP(true);
-    
     try {
-     
-      
-      await parentHandleSendOTP();
-      
-      
-    } catch (err) {
-     
+      await handleSendOTP();
     } finally {
       setIsSendingOTP(false);
     }
   };
-  
-  // Verify OTP with notification feedback
-  const handleVerifyOTP = async () => {
-    if (isVerifyingOTP) return;
-    
+
+  const onVerifyOTP = async () => {
+    if (isVerifyingOTP || isContactVerified) return;
     setIsVerifyingOTP(true);
-    
     try {
-      info("Verifying OTP...", 10000);
-      
-      await parentHandleVerifyOTP();
-      
-      if (isContactVerified) {
-        success("Phone number verified successfully!", 8000);
-      }
-    } catch (err) {
-      error(err.message || "Failed to verify OTP. Please try again.", 8000);
+      await handleVerifyOTP();
     } finally {
       setIsVerifyingOTP(false);
     }
   };
-  
-  // Handle the processing button
-  const handleSubmit = async (e) => {
-    if (isProcessing) return;
-    e.preventDefault();
-    
-    setIsProcessing(true);
-    try {
-      await handleRegister(e);
-      // The parent component will handle success/error notifications
-    } catch (err) {
-      setIsProcessing(false);
-    }
-  };
-  
-
 
   return (
     <div className="form-step">
-      <h3><FiLock size={18} className="step-icon" /> Verification</h3>
-      
+      <p className="step-intro">Verify your mobile number, accept the terms, then complete registration and payment.</p>
+
       <div className="verification-section">
         <div className="verification-info">
           <FiShield size={20} />
-          <span>We need to verify your contact number before proceeding with registration.</span>
+          <span>OTP verification keeps your membership account secure.</span>
         </div>
-        
+
         <div className="contact-display">
-          <label>Contact Number:</label>
-          <span className="contact-number">{formData.contactNo}</span>
+          <label>Mobile number</label>
+          <span className="contact-number">{formData.contactNo || '—'}</span>
           <button
             type="button"
             className={`otp-button ${isContactVerified ? 'otp-sent' : ''}`}
-            onClick={handleSendOTP}
-            disabled={isSendingOTP || isContactVerified}
+            onClick={onSendOTP}
+            disabled={isSendingOTP || isContactVerified || parentIsLoading}
           >
             {isSendingOTP ? (
-              <span>Sending...</span>
+              'Sending...'
             ) : isContactVerified ? (
               <span><FiCheckCircle size={16} /> Verified</span>
             ) : (
@@ -103,64 +62,78 @@ export const StepThree = ({
             )}
           </button>
         </div>
-        
+
         <div className="otp-input-container">
-          <label htmlFor="otp">Enter OTP</label>
+          <label htmlFor="otp">Enter 4-digit OTP</label>
           <div className="otp-verification-row">
             <input
               id="otp"
               name="otp"
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={formData.otp}
               onChange={handleChange}
-              placeholder="Enter the 4-digit code"
+              placeholder="• • • •"
               autoComplete="one-time-code"
               maxLength="4"
               disabled={isContactVerified}
-              className={isContactVerified ? 'input-verified' : ''}
+              className={isContactVerified ? 'input-verified field-input' : `field-input ${fieldErrors.otp ? 'field-input--error' : ''}`}
             />
             <button
               type="button"
               className={`otp-button verify-button ${isContactVerified ? 'button-verified' : ''}`}
-              onClick={handleVerifyOTP}
-              disabled={isVerifyingOTP || !formData.otp || isContactVerified}
+              onClick={onVerifyOTP}
+              disabled={isVerifyingOTP || !formData.otp || isContactVerified || parentIsLoading}
             >
               {isVerifyingOTP ? 'Verifying...' : isContactVerified ? (
-                <span><FiCheckCircle size={16} /> Verified</span>
-              ) : 'Verify OTP'}
+                <span><FiCheckCircle size={16} /> Done</span>
+              ) : (
+                'Verify'
+              )}
             </button>
           </div>
+          <FieldMessage error={fieldErrors.otp} hint={!fieldErrors.otp ? 'Did not receive it? Tap Send OTP again.' : ''} />
         </div>
-        
+
         {isContactVerified && (
           <div className="verification-success">
-            <p className="verified-text">Contact Verified</p>
-            <p>Your phone number has been verified successfully. You can now proceed with registration.</p>
+            <p className="verified-text">Phone verified</p>
+            <p>You can now register and proceed to membership payment.</p>
           </div>
         )}
-        
+
         <div className="verification-note">
-          <p><FiInfo size={14} /> You will receive an OTP on your provided contact number. This helps us verify your identity.</p>
+          <p><FiInfo size={14} /> OTP is sent to the mobile number you entered in the previous step.</p>
         </div>
       </div>
 
-      <div className="terms-agreement">
+      <div className={`terms-agreement ${fieldErrors.terms ? 'has-error' : ''}`}>
         <input
           type="checkbox"
           id="terms"
           name="terms"
           checked={formData.terms}
-          onChange={(e) => handleChange({
-            target: {
-              name: 'terms',
-              value: e.target.checked
-            }
-          })}
+          onChange={handleChange}
         />
         <label htmlFor="terms">
-          <FiFileText size={14} style={{marginRight: '6px'}} />
-          I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms and Conditions</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+          <FiFileText size={14} style={{ marginRight: '6px' }} />
+          I agree to the{' '}
+          <a href="/terms" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>
+          {' '}and{' '}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
         </label>
+      </div>
+      <FieldMessage error={fieldErrors.terms} />
+
+      <div className="register-summary">
+        <h4><FiLock size={16} /> Ready to complete?</h4>
+        <ul>
+          <li>{formData.first_name} {formData.last_name}</li>
+          <li>{formData.email}</li>
+          <li>{formData.contactNo}</li>
+        </ul>
+        <p className="register-summary__note">Tap <strong>Register & Pay</strong> below to create your account and open secure payment.</p>
       </div>
     </div>
   );

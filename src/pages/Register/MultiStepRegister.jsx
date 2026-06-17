@@ -1,864 +1,156 @@
-// MultiStepRegister.jsx - Clean implementation with first_name and last_name fields
-
-import React, { useState, useRef, useEffect } from 'react';
-import './MultiStepRegister.css';
-import { StepOne } from './Step1';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import './MultiStepRegister.css';import { StepOne } from './Step1';
 import { StepTwo } from './Step2';
 import { StepThree } from './Step3';
-import { useNavigate } from 'react-router-dom';
-import { registerUser, logClientRegistrationError, isEmailRegistered, isPhoneRegistered, cleanPhoneNumber } from '../../api/AuthApi';
-import { sendOTP, verifyOTP } from '../../api/OtpApi';
-import { createRazorpayOrder, verifyPayment, initiateRazorpayCheckout } from '../../api/PaymentApi';
-import { useNotification } from '../../contexts/NotificationContext';
-import { validateStepOne } from './Step1';
-import { prepareProfileImageForUpload, prepareDataUrlForUpload } from '../../utils/imageCompression';
+import { REGISTRATION_STEPS } from './registrationConfig';
+import { useRegistrationForm } from './useRegistrationForm';
 
 function MultiStepRegister() {
-  const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [verificationId, setVerificationId] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const { success, error: showError, info } = useNotification();
-  const [userId, setUserId] = useState(null);
+  const registration = useRegistrationForm();
+  const {
+    formTopRef,
+    currentStep,
+    formData,
+    fieldErrors,
+    errorMessage,
+    isLoading,
+    isContactVerified,
+    emailDuplicateError,
+    phoneDuplicateError,
+    useCamera,
+    webcamRef,
+    canProceed,
+    canSubmit,
+    handleChange,
+    handleFileChange,
+    handleToggleCamera,
+    handleCapturePhoto,
+    handleFaceDetectionUpdate,
+    handleEmailAvailabilityCheck,
+    handlePhoneAvailabilityCheck,
+    handleSendOTP,
+    handleVerifyOTP,
+    handleNext,
+    handleBack,
+    handleRegister,
+  } = registration;
 
-  // Ref for scrolling to top
-  const formTopRef = useRef(null);
-  
-  useEffect(() => {
-    return () => {
-      // console.log("MultiStepRegister unmounted");
-    };
-  }, []);
-  
-  // Scroll to top when step changes
-  useEffect(() => {
-    if (formTopRef.current) {
-      formTopRef.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start'
-      });
-    }
-  }, [currentStep]);
-  
-  const [formData, setFormData] = useState({
-    // Basic Details
-    first_name: '',
-    last_name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    photoFile: null,
-    selfieImage: null,
-    // Contact Details
-    companyName: '',
-    designation: '',
-    contactNo: '',
-    whatsappNo: '',
-    address: '',
-    college_name: '',
-    department_of_study: '',
-    year_of_graduation: '',
-    bloodGroup: '',
-    // Verification
-    otp: '',
-    terms: false,
-  });
-
-  const [isContactVerified, setIsContactVerified] = useState(false);
-  const [emailDuplicateError, setEmailDuplicateError] = useState('');
-  const [phoneDuplicateError, setPhoneDuplicateError] = useState('');
-  const webcamRef = useRef(null);
-  const [useCamera, setUseCamera] = useState(false);
-  const [isFaceDetected, setIsFaceDetected] = useState(false);
-
-  const getRegistrationLogContext = () => {
-    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-
-    return {
-      online: navigator.onLine,
-      userAgent: navigator.userAgent,
-      language: navigator.language,
-      connectionType: connection?.effectiveType || null,
-      downlinkMbps: connection?.downlink ?? null,
-      rttMs: connection?.rtt ?? null,
-      viewport: `${window.innerWidth}x${window.innerHeight}`,
-      emailDomain: formData.email?.split('@')[1] || null,
-      hasPhotoFile: Boolean(formData.photoFile),
-      hasSelfie: Boolean(formData.selfieImage),
-      photoFileSizeKb: formData.photoFile ? Math.round(formData.photoFile.size / 1024) : null,
-    };
-  };
-
-  const logRegistrationEvent = (eventName, details = {}, level = 'error') => {
-    const timestamp = new Date().toISOString();
-    const logEntry = {
-      timestamp,
-      event: eventName,
-      step: currentStep,
-      level,
-      context: getRegistrationLogContext(),
-      details,
-    };
-
-    const consolePrefix = `[Registration][${timestamp}] ${eventName}`;
-    if (level === 'info') {
-      console.info(consolePrefix, logEntry);
-    } else if (level === 'warn') {
-      console.warn(consolePrefix, logEntry);
-    } else {
-      console.error(consolePrefix, logEntry);
-    }
-
-    void logClientRegistrationError(logEntry);
-  };
-
-  const getNormalizedPhone = () => cleanPhoneNumber(formData.contactNo) || formData.contactNo?.trim() || '';
-
-  // Change Handlers
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    
-    if (errorMessage) {
-      setErrorMessage('');
-    }
-
-    if (name === 'email' && emailDuplicateError) {
-      setEmailDuplicateError('');
-    }
-
-    if (name === 'contactNo' && phoneDuplicateError) {
-      setPhoneDuplicateError('');
-    }
-  };
-
-  const handleFileChange = (e) => {
-    setFormData((prev) => ({ ...prev, photoFile: e.target.files[0] }));
-  };
-
-  const handleToggleCamera = () => {
-    setUseCamera((prev) => !prev);
-  };
-
-  const handleCapturePhoto = (imageSrc) => {
-    setFormData((prev) => ({ ...prev, selfieImage: imageSrc }));
-  };
-
-  const handleFaceDetectionUpdate = (detected) => {
-    setIsFaceDetected(detected);
-  };
-  
-  // OTP Functions
-  const handleSendOTP = async () => {
-    const normalizedPhone = getNormalizedPhone();
-    if (!normalizedPhone) {
-      setErrorMessage('Please enter your Contact No first.');
-      showError('Please enter your Contact No first.');
-      logRegistrationEvent('OTP_SEND_VALIDATION_FAILED', { reason: 'Missing contact number' }, 'warn');
-      return;
-    }
-    
-    setIsLoading(true);
-    setErrorMessage('');
-    
-    try {
-      const data = await sendOTP(normalizedPhone);
-      // console.log('OTP response:', data);
-      
-      if (data.verification_id) {
-        setVerificationId(data.verification_id);
-        success('OTP sent successfully! Please check your phone.');
-      }
-      
-    } catch (error) {
-      console.error('Error sending OTP:', error);
-      logRegistrationEvent('OTP_SEND_FAILED', {
-        contactNo: formData.contactNo,
-        message: error?.error || error?.message || 'Unknown OTP send error',
-      });
-      
-      const errorDetail = error.error || 'Failed to send OTP. Please try again.';
-      setErrorMessage(errorDetail);
-      showError(errorDetail);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!formData.otp) {
-      setErrorMessage('Please enter the OTP.');
-      showError('Please enter the OTP.');
-      logRegistrationEvent('OTP_VERIFY_VALIDATION_FAILED', { reason: 'Missing OTP' }, 'warn');
-      return;
-    }
-    
-    setIsLoading(true);
-    setErrorMessage('');
-    
-    try {
-      const payload = { 
-        phone_number: getNormalizedPhone(),
-        otp: formData.otp
-      };
-      
-      if (verificationId) {
-        payload.verification_id = verificationId;
-      }
-      
-      // console.log('Verifying OTP with payload:', payload);
-      await verifyOTP(payload);
-      
-      setIsContactVerified(true);
-      success('Phone number verified successfully!');
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      logRegistrationEvent('OTP_VERIFY_FAILED', {
-        contactNo: formData.contactNo,
-        verificationId,
-        message: error?.error || error?.message || 'Unknown OTP verification error',
-      });
-      
-      const errorDetail = error.error || 'Failed to verify OTP. Please try again.';
-      setErrorMessage(errorDetail);
-      showError(errorDetail);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEmailAvailabilityCheck = async (email) => {
-    const message = 'This email is already registered. Please use a different email or log in.';
-    const checkFailedMessage = 'Unable to verify email availability. Please check your connection and try again.';
-    try {
-      const exists = await isEmailRegistered(email);
-      if (exists) {
-        setEmailDuplicateError(message);
-        return false;
-      }
-      setEmailDuplicateError('');
-      return true;
-    } catch (error) {
-      console.error('Email availability check failed:', error);
-      setEmailDuplicateError(checkFailedMessage);
-      logRegistrationEvent('EMAIL_AVAILABILITY_CHECK_FAILED', {
-        emailDomain: email?.split('@')[1] || null,
-        message: error?.error || error?.message || 'Unknown email check error',
-      }, 'warn');
-      return false;
-    }
-  };
-
-  const handlePhoneAvailabilityCheck = async (phone) => {
-    const message = 'This phone number is already registered. Please use a different number or log in.';
-    const checkFailedMessage = 'Unable to verify phone number availability. Please check your connection and try again.';
-    const normalizedPhone = cleanPhoneNumber(phone) || phone?.trim();
-    try {
-      const exists = await isPhoneRegistered(normalizedPhone);
-      if (exists) {
-        setPhoneDuplicateError(message);
-        return false;
-      }
-      setPhoneDuplicateError('');
-      return true;
-    } catch (error) {
-      console.error('Phone availability check failed:', error);
-      setPhoneDuplicateError(checkFailedMessage);
-      logRegistrationEvent('PHONE_AVAILABILITY_CHECK_FAILED', {
-        message: error?.error || error?.message || 'Unknown phone check error',
-      }, 'warn');
-      return false;
-    }
-  };
-
-  // Navigation functions
-  const handleNext = async () => {
-    setErrorMessage('');
-    
-    if (currentStep === 1) {
-      if (emailDuplicateError) {
-        setErrorMessage(emailDuplicateError);
-        showError(emailDuplicateError);
-        return;
-      }
-
-      const validation = validateStepOne(formData, isFaceDetected);
-      
-      if (!validation.isValid) {
-        const errorMessages = Object.values(validation.errors).filter(Boolean);
-        const errorMsg = errorMessages.length > 0 
-          ? errorMessages.join('. ') 
-          : 'Please complete all required fields in Step 1.';
-        
-        setErrorMessage(errorMsg);
-        showError(errorMsg);
-        return;
-      }
-      
-      if (!formData.first_name) {
-        setErrorMessage('Please enter your first name.');
-        showError('Please enter your first name.');
-        return;
-      }
-      
-      if (!formData.last_name) {
-        setErrorMessage('Please enter your last name.');
-        showError('Please enter your last name.');
-        return;
-      }
-      
-      if (!formData.email) {
-        setErrorMessage('Please enter your email address.');
-        showError('Please enter your email address.');
-        return;
-      }
-
-      setIsLoading(true);
-      const isEmailAvailable = await handleEmailAvailabilityCheck(formData.email);
-      setIsLoading(false);
-      if (!isEmailAvailable) {
-        const msg = 'This email is already registered. Please use a different email or log in.';
-        setErrorMessage(msg);
-        showError(msg);
-        return;
-      }
-      
-      if (!formData.password || !formData.confirmPassword) {
-        setErrorMessage('Please enter and confirm your password.');
-        showError('Please enter and confirm your password.');
-        return;
-      }
-      
-      if (formData.password !== formData.confirmPassword) {
-        setErrorMessage('Passwords do not match. Please check and try again.');
-        showError('Passwords do not match. Please check and try again.');
-        return;
-      }
-      
-      const passwordValidation = {
-        minLength: formData.password.length >= 8,
-        hasUppercase: /[A-Z]/.test(formData.password),
-        hasLowercase: /[a-z]/.test(formData.password),
-        hasNumber: /\d/.test(formData.password),
-        hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>?]/.test(formData.password)
-      };
-      
-      const isPasswordValid = Object.values(passwordValidation).every(Boolean);
-      
-      if (!isPasswordValid) {
-        setErrorMessage('Password does not meet the security requirements. Please check the requirements below the password field.');
-        showError('Password does not meet the security requirements.');
-        return;
-      }
-      
-      if (!formData.photoFile && !formData.selfieImage) {
-        setErrorMessage('Please upload or take a profile photo to continue.');
-        showError('Please upload or take a profile photo to continue.');
-        return;
-      }
-      
-      if (!isFaceDetected) {
-        setErrorMessage('Face verification is required. Please upload a clear photo where your face is visible.');
-        showError('Face verification is required. Please upload a clear photo where your face is visible.');
-        return;
-      }
-    }
-    
-    if (currentStep === 2) {
-      if (phoneDuplicateError) {
-        setErrorMessage(phoneDuplicateError);
-        showError(phoneDuplicateError);
-        return;
-      }
-
-      const normalizedPhone = getNormalizedPhone();
-      if (!normalizedPhone) {
-        setErrorMessage('Please fill out your Contact Number.');
-        showError('Please fill out your Contact Number.');
-        return;
-      }
-
-      setIsLoading(true);
-      const [isEmailAvailable, isPhoneAvailable] = await Promise.all([
-        handleEmailAvailabilityCheck(formData.email),
-        handlePhoneAvailabilityCheck(normalizedPhone),
-      ]);
-      setIsLoading(false);
-
-      if (!isEmailAvailable) {
-        const msg = emailDuplicateError || 'This email is already registered. Please use a different email or log in.';
-        setErrorMessage(msg);
-        showError(msg);
-        return;
-      }
-
-      if (!isPhoneAvailable) {
-        const msg = phoneDuplicateError || 'This phone number is already registered. Please use a different number or log in.';
-        setErrorMessage(msg);
-        showError(msg);
-        return;
-      }
-    }
-    
-    setCurrentStep((prev) => prev + 1);
-    success(`Step ${currentStep} completed! Proceeding to next step.`);
-  };
-
-  const handleBack = () => {
-    setErrorMessage('');
-    setCurrentStep((prev) => prev - 1);
-  };
-
-  // Payment verification
-  async function handlePaymentVerification(paymentResponse) {
-    // console.log('Starting payment verification with:', paymentResponse);
-    setIsLoading(true);
-    
-    try {
-      const verificationPayload = {
-        ...paymentResponse,
-        user_id: userId || paymentResponse.user_id
-      };
-      
-      // console.log('Payment verification payload:', verificationPayload);
-      
-      const responseData = await verifyPayment(verificationPayload);
-      // console.log('Payment verification successful:', responseData);
-      
-      // Update user ID if needed
-      if (responseData.user_id && !userId) {
-        // console.log('Setting user ID from response:', responseData.user_id);
-        setUserId(responseData.user_id);
-      }
-      
-      // Success message with longer duration
-      success('🎉 Payment verified successfully! Membership activated. You can generate your membership card from your profile.', 8000);
-      
-      // Scroll to top to ensure success message is visible on mobile
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-      
-      // Wait longer before navigating to ensure mobile users see the message
-      setTimeout(() => {
-        navigate('/login');
-      }, 6000);
-      
-    } catch (error) {
-      console.error('Payment verification failed:', error);
-      logRegistrationEvent('PAYMENT_VERIFICATION_FAILED', {
-        userId: userId || paymentResponse?.user_id,
-        message: error?.details || error?.message || 'Unknown payment verification error',
-      });
-      
-      const errorDetail = error.details || error.message || 'Payment verification failed';
-      setErrorMessage(`Payment verification failed: ${errorDetail}`);
-      showError(`Payment verification failed: ${errorDetail}`);
-      
-      setIsLoading(false);
-    }
-  }
-
-  // Payment initiation
-  async function handleInitiatePayment(userId) {
-    // console.log('Initiating payment for user:', userId);
-    setIsLoading(true);
-    
-    try {
-      if (userId) {
-        setUserId(userId);
-      }
-      
-      const orderData = await createRazorpayOrder(userId);
-      // console.log('Razorpay order created:', orderData);
-      
-      if (!orderData || !orderData.order_id) {
-        throw new Error('Invalid order data received from server');
-      }
-      
-      const orderWithUserId = {
-        ...orderData,
-        user_id: userId
-      };
-      
-      initiateRazorpayCheckout(
-        orderWithUserId,
-        {
-          fullName: `${formData.first_name} ${formData.last_name}`,
-          email: formData.email,
-          contactNo: formData.contactNo
-        },
-        // Success callback
-        (response) => {
-          // console.log('Razorpay checkout successful, verifying payment...', response);
-          
-          const verificationPayload = {
-            ...response,
-            user_id: userId
-          };
-          
-          handlePaymentVerification(verificationPayload);
-        },
-        // Error callback
-        (errorMsg) => {
-          console.error('Razorpay checkout failed:', errorMsg);
-          logRegistrationEvent('PAYMENT_CHECKOUT_FAILED', {
-            userId,
-            message: errorMsg || 'Unknown checkout error',
-          });
-          setErrorMessage(`Payment failed: ${errorMsg}`);
-          showError(`Payment failed: ${errorMsg}`);
-          setIsLoading(false);
-        }
-      );
-    } catch (error) {
-      console.error('Payment initiation error:', error);
-      logRegistrationEvent('PAYMENT_INITIATION_FAILED', {
-        userId,
-        message: error?.error || error?.message || 'Unknown payment initiation error',
-      });
-      const errorDetail = error.error || error.message || 'Could not create payment order';
-      setErrorMessage(`Payment initiation failed: ${errorDetail}`);
-      showError(`Payment initiation failed: ${errorDetail}`);
-      setIsLoading(false);
-    }
-  }
-
-  const generateUsername = (firstName, lastName, email) => {
-    let fullName = `${firstName} ${lastName}`;
-    let username = fullName
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '')
-      .substring(0, 30);
-
-    if (username.length < 3) {
-      const emailPrefix = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-      username = emailPrefix.substring(0, 30);
-    }
-
-    return username;
-  };
-
-  // Registration function
-  const handleRegister = async (e) => {
-    e.preventDefault();
-
-    if (!isContactVerified) {
-      setErrorMessage('Please verify your contact number before proceeding.');
-      showError('Please verify your contact number before proceeding.');
-      logRegistrationEvent('REGISTER_VALIDATION_FAILED', { reason: 'Contact not verified' }, 'warn');
-      return;
-    }
-    
-    if (!formData.terms) {
-      setErrorMessage('Please agree to the Terms and Conditions before proceeding.');
-      showError('Please agree to the Terms and Conditions before proceeding.');
-      logRegistrationEvent('REGISTER_VALIDATION_FAILED', { reason: 'Terms not accepted' }, 'warn');
-      return;
-    }
-    
-    setIsLoading(true);
-    setErrorMessage('');
-
-    const normalizedPhone = getNormalizedPhone();
-    const [isEmailAvailable, isPhoneAvailable] = await Promise.all([
-      handleEmailAvailabilityCheck(formData.email),
-      handlePhoneAvailabilityCheck(normalizedPhone),
-    ]);
-
-    if (!isEmailAvailable || !isPhoneAvailable) {
-      const msg = !isEmailAvailable
-        ? (emailDuplicateError || 'This email is already registered. Please use a different email or log in.')
-        : (phoneDuplicateError || 'This phone number is already registered. Please use a different number or log in.');
-      setErrorMessage(msg);
-      showError(msg);
-      setIsLoading(false);
-      return;
-    }
-
-    let compressedProfileSizeKb = null;
-    let imageUploadStrategy = null;
-
-    try {
-      let response;
-      const hasProfilePicture = formData.photoFile || formData.selfieImage;
-      
-      const validUsername = generateUsername(formData.first_name, formData.last_name, formData.email);
-      
-      if (hasProfilePicture) {
-        const formDataPayload = new FormData();
-        
-        formDataPayload.append('user_type', 'member');
-        formDataPayload.append('username', validUsername);
-        formDataPayload.append('email', formData.email);
-        formDataPayload.append('phone_number', normalizedPhone);
-        formDataPayload.append('company_name', formData.companyName || '');
-        formDataPayload.append('designation', formData.designation || '');
-        formDataPayload.append('address', formData.address || '');
-        formDataPayload.append('blood_group', formData.bloodGroup || '');
-        formDataPayload.append('first_name', formData.first_name || '');
-        formDataPayload.append('last_name', formData.last_name || '');
-        formDataPayload.append('college_name', formData.college_name || '');
-        formDataPayload.append('department_of_study', formData.department_of_study || '');
-        formDataPayload.append('year_of_graduation', formData.year_of_graduation || '');
-        formDataPayload.append('password', formData.password);
-        
-        let profileFile = null;
-        let imagePrepResult = null;
-        if (formData.photoFile) {
-          imagePrepResult = await prepareProfileImageForUpload(formData.photoFile);
-        } else if (formData.selfieImage) {
-          imagePrepResult = await prepareDataUrlForUpload(formData.selfieImage);
-        }
-
-        profileFile = imagePrepResult?.file || null;
-        imageUploadStrategy = imagePrepResult?.strategy || null;
-
-        if (profileFile) {
-          compressedProfileSizeKb = Math.round(profileFile.size / 1024);
-          formDataPayload.append('profile_picture', profileFile);
-        }
-        
-        logRegistrationEvent('REGISTER_REQUEST_START', {
-          uploadType: 'multipart',
-          compressedProfileSizeKb,
-          imageUploadStrategy,
-          originalPhotoSizeKb: imagePrepResult?.originalSizeKb ?? null,
-          fallbackReason: imagePrepResult?.fallbackReason ?? null,
-          phoneNumberLength: normalizedPhone.length,
-        }, 'info');
-
-        response = await registerUser(formDataPayload);
-        
-      } else {
-        const payload = {
-          user_type: 'member',
-          username: validUsername, 
-          email: formData.email,
-          phone_number: normalizedPhone,
-          company_name: formData.companyName || '',
-          designation: formData.designation || '',
-          address: formData.address || '',
-          blood_group: formData.bloodGroup || '',
-          first_name: formData.first_name || '',
-          last_name: formData.last_name || '',
-          college_name: formData.college_name || '',
-          department_of_study: formData.department_of_study || '',
-          year_of_graduation: formData.year_of_graduation || '',
-          password: formData.password
-        };
-        
-        logRegistrationEvent('REGISTER_REQUEST_START', {
-          uploadType: 'json',
-          phoneNumberLength: normalizedPhone.length,
-        }, 'info');
-
-        response = await registerUser(payload);
-      }
-      
-      // Normalize
-      const { data: resData, status } = response || {};
-
-      // Handle 409 duplicate active
-      if (status === 409) {
-        const field = resData?.field || 'account';
-        setErrorMessage('This account already exists and is active. Please log in.');
-        showError('Account exists. Please log in.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Handle 201 created, or 200 with pending-payment code
-      const isPending = status === 200 && resData?.code === 'ACCOUNT_PENDING_PAYMENT';
-      const isCreated = status === 201;
-      if (isCreated || isPending) {
-        const newUserId = resData?.user_id;
-        if (!newUserId) {
-          throw { message: 'Registration failed: Missing user_id in response.' };
-        }
-        setUserId(newUserId);
-        success('Registration successful! Proceeding to payment...');
-        handleInitiatePayment(newUserId);
-        return;
-      }
-
-      // Fallback: unexpected
-      throw { message: 'Registration failed: Unexpected server response.' };
-      
-    } catch (error) {
-      console.error('Registration error:', error);
-      
-      // Determine error type and provide user-friendly messages
-      const isNetworkError = error.isNetworkError === true || 
-                            error.status === 'NETWORK_ERROR' ||
-                            error.message?.includes('timeout') ||
-                            error.message?.includes('Network error') ||
-                            error.message?.includes('Failed to fetch');
-      
-      const attempts = error.attempts || 1;
-      
-      let errorMsg;
-      let userMessage;
-      
-      if (isNetworkError) {
-        if (error.message?.includes('timeout')) {
-          userMessage = 'Registration request timed out. The server is taking longer than expected. Please check your internet connection and try again.';
-          errorMsg = 'Request timeout - please check your internet connection';
-        } else {
-          userMessage = 'Network error occurred during registration. Please check your internet connection and try again.';
-          errorMsg = 'Network connection error';
-        }
-        
-        if (attempts > 1) {
-          userMessage += ` (Attempted ${attempts} times)`;
-        }
-      } else if (error.message?.includes('image') || error.message?.includes('photo') || error.message?.includes('compression')) {
-        userMessage = 'Unable to process your profile photo. Please try taking a new picture or upload a JPG/PNG file under 5MB.';
-        errorMsg = error.message || 'Image processing failed';
-      } else if (error.status >= 500) {
-        // Server error
-        userMessage = 'Server error occurred. Our team has been notified. Please try again in a few moments.';
-        errorMsg = error.message || 'Server error';
-      } else if (error.status >= 400 && error.status < 500) {
-        // Client error - use the error message from server
-        userMessage = error.message || 'Registration failed. Please check your information and try again.';
-        errorMsg = error.message || 'Validation error';
-      } else {
-        // Unknown error
-        userMessage = error.message || 'An unexpected error occurred during registration. Please try again.';
-        errorMsg = error.message || 'Unexpected error';
-      }
-      
-      setErrorMessage(userMessage);
-      showError(userMessage, 10000);
-      setIsLoading(false);
-      
-      // Log detailed error for debugging
-      const registrationErrorDetails = {
-        errorType: isNetworkError ? 'Network' : 'Server',
-        status: error.status,
-        attempts: attempts,
-        message: error.message,
-        errorName: error.errorName || error.name,
-        errorCause: error.errorCause,
-        requestTimeoutMs: error.requestTimeoutMs,
-        uploadType: error.isFormDataUpload ? 'multipart' : 'json',
-        compressedProfileSizeKb: error.compressedProfileSizeKb ?? compressedProfileSizeKb,
-        imageUploadStrategy: imageUploadStrategy,
-        originalError: error.originalError,
-      };
-      console.error('Registration failed:', registrationErrorDetails);
-      logRegistrationEvent('REGISTER_FAILED', registrationErrorDetails);
-    }
-  };
-
-  const renderStepIndicator = () => (
-    <div className="step-indicator">
-      <div className={`step-circle ${currentStep >= 1 ? 'active' : ''}`}>1</div>
-      <div className={`step-line ${currentStep > 1 ? 'active' : ''}`} />
-      <div className={`step-circle ${currentStep >= 2 ? 'active' : ''}`}>2</div>
-      <div className={`step-line ${currentStep > 2 ? 'active' : ''}`} />
-      <div className={`step-circle ${currentStep === 3 ? 'active' : ''}`}>3</div>
-    </div>
-  );
+  const activeStep = REGISTRATION_STEPS.find((step) => step.id === currentStep);
+  const progressPercent = Math.round((currentStep / REGISTRATION_STEPS.length) * 100);
 
   return (
-    <div className="multistep-container">
-      <div ref={formTopRef} className="scroll-target"></div>
-      
-      <div className="form-header">
-        <h2>Sign Up</h2>
-        <p>Already a Member? <a href="/login">Sign In</a></p>
+    <div className="register-page">
+    <div className="multistep-container">      <div ref={formTopRef} className="scroll-target" aria-hidden="true" />
+
+      <header className="form-header">
+        <div>
+          <h2>Join KEA Bengaluru</h2>
+          <p className="form-subtitle">Create your membership account in 3 simple steps</p>
+        </div>
+        <p className="form-signin">
+          Already a member? <Link to="/login">Sign in</Link>
+        </p>
+      </header>
+
+      <div className="step-progress" aria-label="Registration progress">
+        <div className="step-progress__bar">
+          <div className="step-progress__fill" style={{ width: `${progressPercent}%` }} />
+        </div>
+        <div className="step-progress__labels">
+          {REGISTRATION_STEPS.map((step) => (
+            <div
+              key={step.id}
+              className={`step-progress__item ${currentStep >= step.id ? 'is-active' : ''} ${currentStep === step.id ? 'is-current' : ''}`}
+            >
+              <span className="step-progress__number">{step.id}</span>
+              <span className="step-progress__text">
+                <strong>{step.label}</strong>
+                <small>{step.short}</small>
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
-      
-      {renderStepIndicator()}
-      
+
+      {activeStep && (
+        <div className="step-banner">
+          <span className="step-banner__eyebrow">Step {currentStep} of {REGISTRATION_STEPS.length}</span>
+          <h3 className="step-banner__title">{activeStep.label}</h3>
+          <p className="step-banner__desc">{activeStep.short}</p>
+        </div>
+      )}
+
       {errorMessage && (
-        <div className="error-message">
+        <div className="error-message" role="alert">
           {errorMessage}
         </div>
       )}
-      
-      <form onSubmit={handleRegister} className="multistep-form">
+
+      <form onSubmit={handleRegister} className="multistep-form" noValidate>
         {currentStep === 1 && (
-          <StepOne 
-            formData={formData} 
-            webcamRef={webcamRef} 
-            useCamera={useCamera}  
+          <StepOne
+            formData={formData}
+            fieldErrors={fieldErrors}
+            webcamRef={webcamRef}
+            useCamera={useCamera}
             handleChange={handleChange}
             handleFileChange={handleFileChange}
             handleToggleCamera={handleToggleCamera}
-            handleCapturePhoto={handleCapturePhoto} 
+            handleCapturePhoto={handleCapturePhoto}
             onFaceDetectionUpdate={handleFaceDetectionUpdate}
             emailDuplicateError={emailDuplicateError}
             onEmailAvailabilityCheck={handleEmailAvailabilityCheck}
           />
         )}
-        
+
         {currentStep === 2 && (
-          <StepTwo 
-            formData={formData} 
+          <StepTwo
+            formData={formData}
+            fieldErrors={fieldErrors}
             handleChange={handleChange}
             phoneDuplicateError={phoneDuplicateError}
             onPhoneAvailabilityCheck={handlePhoneAvailabilityCheck}
           />
         )}
-        
+
         {currentStep === 3 && (
-          <StepThree 
-            formData={formData} 
+          <StepThree
+            formData={formData}
+            fieldErrors={fieldErrors}
             handleChange={handleChange}
             handleSendOTP={handleSendOTP}
-            handleVerifyOTP={handleVerifyOTP} 
+            handleVerifyOTP={handleVerifyOTP}
             isContactVerified={isContactVerified}
             isLoading={isLoading}
-            handleBack={handleBack}
-            handleRegister={handleRegister}
           />
         )}
 
         <div className="form-navigation">
           {currentStep > 1 && (
-            <button 
-              type="button" 
-              className="nav-button back" 
-              onClick={handleBack}
-              disabled={isLoading}
-            >
+            <button type="button" className="nav-button back" onClick={handleBack} disabled={isLoading}>
               Back
             </button>
           )}
-          
-          {currentStep < 3 && (
-            <button 
-              type="button" 
-              className="nav-button next" 
+
+          {currentStep < 3 ? (
+            <button
+              type="button"
+              className="nav-button next"
               onClick={handleNext}
-              disabled={
-                isLoading ||
-                (currentStep === 1 && Boolean(emailDuplicateError)) ||
-                (currentStep === 2 && Boolean(phoneDuplicateError))
-              }
+              disabled={!canProceed}
             >
-              {isLoading ? 'Processing...' : 'Save & Continue'}
+              {isLoading ? 'Please wait...' : 'Continue'}
             </button>
-          )}
-          
-          {currentStep === 3 && (
-            <button 
-              type="submit" 
-              className="nav-button submit"
-              disabled={isLoading || !isContactVerified || !formData.terms}
-            >
-              {isLoading ? 'Processing...' : 'Register'}
+          ) : (
+            <button type="submit" className="nav-button submit" disabled={!canSubmit}>
+              {isLoading ? 'Processing...' : 'Register & Pay'}
             </button>
           )}
         </div>
       </form>
     </div>
-  );
-}
+    </div>
+  );}
 
 export default MultiStepRegister;

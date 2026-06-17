@@ -1,81 +1,50 @@
 import React from 'react';
-import { FiBriefcase, FiUser, FiPhone, FiMapPin, FiDroplet, FiBookOpen, FiCalendar,  } from 'react-icons/fi';
+import { FiBriefcase, FiUser, FiPhone, FiMapPin, FiDroplet, FiBookOpen, FiCalendar } from 'react-icons/fi';
+import { BLOOD_GROUPS, FIELD_LIMITS, getGraduationYears } from './registrationConfig';
+import { applyFieldLimit } from './registrationValidation';
+import { FieldMessage, fieldClassName } from './FieldMessage';
 
-const FIELD_LIMITS = {
-  companyName: { max: 50, label: 'Company Name' },
-  designation: { max: 50, label: 'Designation' },
-  college_name: { max: 50, label: 'College/University Name' },
-  department_of_study: { max: 30, label: 'Department of Study' },
-  contactNo: { max: 15, label: 'Contact Number' },
-};
-
-export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPhoneAvailabilityCheck }) => {
+export const StepTwo = ({
+  formData,
+  fieldErrors = {},
+  handleChange,
+  phoneDuplicateError = '',
+  onPhoneAvailabilityCheck,
+}) => {
   const [lengthErrors, setLengthErrors] = React.useState({});
   const [isCheckingPhone, setIsCheckingPhone] = React.useState(false);
-  const bloodGroups = [
-    { value: '', label: 'Select Blood Group' },
-    { value: 'A+', label: 'A+ (A Positive)' },
-    { value: 'A-', label: 'A- (A Negative)' },
-    { value: 'B+', label: 'B+ (B Positive)' },
-    { value: 'B-', label: 'B- (B Negative)' },
-    { value: 'AB+', label: 'AB+ (AB Positive)' },
-    { value: 'AB-', label: 'AB- (AB Negative)' },
-    { value: 'O+', label: 'O+ (O Positive)' },
-    { value: 'O-', label: 'O- (O Negative)' },
-  ];
-
-  // Generate year options (current year to 50 years back)
-  const currentYear = new Date().getFullYear() + 4;
-  const yearOptions = [];
-  for (let year = currentYear; year >= currentYear - 79; year--) {
-    yearOptions.push(year);
-  }
+  const yearOptions = getGraduationYears();
 
   const handleLimitedChange = (e) => {
     const { name, value } = e.target;
-    const limit = FIELD_LIMITS[name];
+    const { value: nextValue, lengthError } = applyFieldLimit(name, value);
 
-    if (!limit) {
-      handleChange(e);
-      return;
-    }
-
-    const trimmedValue = value.length > limit.max ? value.slice(0, limit.max) : value;
-
-    if (trimmedValue.length >= limit.max) {
-      setLengthErrors((prev) => ({
-        ...prev,
-        [name]: `${limit.label} has reached the maximum of ${limit.max} characters.`,
-      }));
-    } else {
-      setLengthErrors((prev) => {
-        if (!prev[name]) {
-          return prev;
-        }
+    setLengthErrors((prev) => {
+      if (!lengthError) {
+        if (!prev[name]) return prev;
         const next = { ...prev };
         delete next[name];
         return next;
-      });
-    }
+      }
+      return { ...prev, [name]: lengthError };
+    });
 
-    if (trimmedValue !== value) {
-      handleChange({ target: { name, value: trimmedValue } });
+    if (nextValue !== value) {
+      handleChange({ target: { name, value: nextValue } });
       return;
     }
 
     handleChange(e);
   };
 
-  const renderLengthError = (fieldName) =>
-    lengthErrors[fieldName] ? (
-      <small className="input-error" style={{ color: 'red' }}>{lengthErrors[fieldName]}</small>
-    ) : null;
+  const getError = (field) => {
+    if (field === 'contactNo' && phoneDuplicateError) return phoneDuplicateError;
+    return fieldErrors[field] || lengthErrors[field] || '';
+  };
 
   const handleContactBlur = async () => {
     const normalizedPhone = formData.contactNo?.trim();
-    if (!normalizedPhone || !onPhoneAvailabilityCheck) {
-      return;
-    }
+    if (!normalizedPhone || !onPhoneAvailabilityCheck) return;
 
     setIsCheckingPhone(true);
     try {
@@ -87,8 +56,8 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
 
   return (
     <div className="form-step">
-      <h3>Contact Details</h3>
-      
+      <p className="step-intro">Tell us about your work and how we can reach you. Fields marked * are required.</p>
+
       <div className="form-group">
         <label htmlFor="companyName">
           <FiBriefcase className="field-icon" />
@@ -98,15 +67,16 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
           id="companyName"
           name="companyName"
           type="text"
+          className={fieldClassName(getError('companyName'))}
           value={formData.companyName}
           onChange={handleLimitedChange}
           maxLength={FIELD_LIMITS.companyName.max}
-          placeholder="Enter Company Name"
+          placeholder="Your employer (optional)"
           autoComplete="organization"
         />
-        {renderLengthError('companyName')}
+        <FieldMessage error={getError('companyName')} />
       </div>
-      
+
       <div className="form-group">
         <label htmlFor="designation">
           <FiUser className="field-icon" />
@@ -116,35 +86,33 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
           id="designation"
           name="designation"
           type="text"
+          className={fieldClassName(getError('designation'))}
           value={formData.designation}
           onChange={handleLimitedChange}
           maxLength={FIELD_LIMITS.designation.max}
-          placeholder="Enter Your Job Title"
+          placeholder="Your job title (optional)"
           autoComplete="organization-title"
         />
-        {renderLengthError('designation')}
+        <FieldMessage error={getError('designation')} />
       </div>
 
-      {/* Academic Information Section */}
       <div className="form-section">
         <h4 className="section-title">Academic Information</h4>
-        
+
         <div className="form-group">
-          <label htmlFor="college_name">
-            {/* <FiGraduationCa className="field-icon" /> */}
-            College/University Name
-          </label>
+          <label htmlFor="college_name">College / University</label>
           <input
             id="college_name"
             name="college_name"
             type="text"
+            className={fieldClassName(getError('college_name'))}
             value={formData.college_name || ''}
             onChange={handleLimitedChange}
             maxLength={FIELD_LIMITS.college_name.max}
-            placeholder="Enter your college or university name"
+            placeholder="Institution name (optional)"
             autoComplete="off"
           />
-          {renderLengthError('college_name')}
+          <FieldMessage error={getError('college_name')} />
         </div>
 
         <div className="form-group">
@@ -156,13 +124,14 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
             id="department_of_study"
             name="department_of_study"
             type="text"
+            className={fieldClassName(getError('department_of_study'))}
             value={formData.department_of_study || ''}
             onChange={handleLimitedChange}
             maxLength={FIELD_LIMITS.department_of_study.max}
-            placeholder="e.g., Computer Science, Mechanical Engineering, Business Administration"
+            placeholder="e.g. Computer Science (optional)"
             autoComplete="off"
           />
-          {renderLengthError('department_of_study')}
+          <FieldMessage error={getError('department_of_study')} />
         </div>
 
         <div className="form-group">
@@ -177,7 +146,7 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
             onChange={handleChange}
             className="form-select"
           >
-            <option value="">Select Graduation Year</option>
+            <option value="">Select year (optional)</option>
             {yearOptions.map((year) => (
               <option key={year} value={year}>
                 {year}
@@ -186,29 +155,32 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
           </select>
         </div>
       </div>
-      
+
       <div className="form-group">
         <label htmlFor="contactNo">
           <FiPhone className="field-icon" />
-          Contact Number
+          Mobile Number *
         </label>
         <input
           id="contactNo"
           name="contactNo"
           type="tel"
+          className={fieldClassName(getError('contactNo'))}
           value={formData.contactNo}
           onChange={handleLimitedChange}
           onBlur={handleContactBlur}
           maxLength={FIELD_LIMITS.contactNo.max}
-          placeholder="Enter Your Phone Number"
+          placeholder="10-digit mobile number"
           autoComplete="tel"
+          inputMode="numeric"
         />
-        {renderLengthError('contactNo')}
-        {isCheckingPhone && <small className="input-hint">Checking phone number availability...</small>}
-        {phoneDuplicateError && <small className="input-error" style={{ color: 'red' }}>{phoneDuplicateError}</small>}
-        <small className="input-hint">We'll send a verification code to this number</small>
+        <FieldMessage
+          checking={isCheckingPhone ? 'Checking number availability...' : ''}
+          error={getError('contactNo')}
+          hint={!getError('contactNo') ? 'We will send an OTP to verify this number in the next step.' : ''}
+        />
       </div>
-      
+
       <div className="form-group">
         <label htmlFor="address">
           <FiMapPin className="field-icon" />
@@ -218,19 +190,19 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
           id="address"
           name="address"
           type="text"
+          className={fieldClassName(getError('address'))}
           value={formData.address}
           onChange={handleChange}
-          placeholder="Enter Street, City, Country"
+          placeholder="Street, city, state (optional)"
           autoComplete="street-address"
         />
+        <FieldMessage error={getError('address')} />
       </div>
-      
-      {/* Blood Group Field */}
+
       <div className="form-group">
         <label htmlFor="bloodGroup">
           <FiDroplet className="field-icon" />
-          Blood Group
-          <span className="optional-field"> (Optional)</span>
+          Blood Group <span className="optional-field">(optional)</span>
         </label>
         <select
           id="bloodGroup"
@@ -239,13 +211,13 @@ export const StepTwo = ({ formData, handleChange, phoneDuplicateError = '', onPh
           onChange={handleChange}
           className="form-select"
         >
-          {bloodGroups.map((group) => (
-            <option key={group.value} value={group.value}>
+          {BLOOD_GROUPS.map((group) => (
+            <option key={group.value || 'empty'} value={group.value}>
               {group.label}
             </option>
           ))}
         </select>
-        <small className="input-hint">This information may be helpful for emergency situations</small>
+        <FieldMessage hint="Helpful in emergency situations" />
       </div>
     </div>
   );

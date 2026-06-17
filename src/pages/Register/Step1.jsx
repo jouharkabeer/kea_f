@@ -2,16 +2,15 @@ import React, { useEffect, useState } from "react";
 import { FiCamera, FiUpload, FiCheckCircle, FiAlertTriangle, FiXCircle, FiRefreshCw, FiUser, FiEye, FiEyeOff } from "react-icons/fi";
 import Webcam from "react-webcam";
 // import * as faceapi from "face-api.js";
-import { isImageFile } from "../../utils/imageCompression";
+import { isImageFile, isHeicFile, HEIC_REJECTION_MESSAGE } from "../../utils/imageCompression";
 import { useNotification } from "../../contexts/NotificationContext";
-
-const FIELD_LIMITS = {
-  first_name: { max: 30, label: 'First Name' },
-  last_name: { max: 30, label: 'Last Name' },
-};
+import { FIELD_LIMITS } from "./registrationConfig";
+import { applyFieldLimit } from "./registrationValidation";
+import { FieldMessage, fieldClassName } from "./FieldMessage";
 
 export const StepOne = ({
   formData,
+  fieldErrors = {},
   handleChange,
   handleFileChange: parentHandleFileChange,
   handleToggleCamera,
@@ -127,43 +126,27 @@ export const StepOne = ({
 
   const handleLimitedChange = (e) => {
     const { name, value } = e.target;
-    const limit = FIELD_LIMITS[name];
+    const { value: nextValue, lengthError } = applyFieldLimit(name, value);
 
-    if (!limit) {
-      handleChange(e);
-      return;
-    }
-
-    const trimmedValue = value.length > limit.max ? value.slice(0, limit.max) : value;
-
-    if (trimmedValue.length >= limit.max) {
-      setLengthErrors((prev) => ({
-        ...prev,
-        [name]: `${limit.label} has reached the maximum of ${limit.max} characters.`,
-      }));
-    } else {
-      setLengthErrors((prev) => {
-        if (!prev[name]) {
-          return prev;
-        }
+    setLengthErrors((prev) => {
+      if (!lengthError) {
+        if (!prev[name]) return prev;
         const next = { ...prev };
         delete next[name];
         return next;
-      });
-    }
+      }
+      return { ...prev, [name]: lengthError };
+    });
 
-    if (trimmedValue !== value) {
-      handleChange({ target: { name, value: trimmedValue } });
+    if (nextValue !== value) {
+      handleChange({ target: { name, value: nextValue } });
       return;
     }
 
     handleChange(e);
   };
 
-  const renderLengthError = (fieldName) =>
-    lengthErrors[fieldName] ? (
-      <small className="input-error" style={{ color: 'red' }}>{lengthErrors[fieldName]}</small>
-    ) : null;
+  const getError = (field) => fieldErrors[field] || lengthErrors[field] || '';
 
   const handleEmailChange = (e) => {
     handleChange(e);
@@ -220,14 +203,22 @@ export const StepOne = ({
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (isHeicFile(file)) {
+        safeError(HEIC_REJECTION_MESSAGE);
+        e.target.value = '';
+        return;
+      }
+
       if (!isImageFile(file)) {
         safeError("Please select a valid image file (JPG, PNG, or WEBP)");
+        e.target.value = '';
         return;
       }
       
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         safeError("Image size exceeds 5MB limit. Please select a smaller image.");
+        e.target.value = '';
         return;
       }
       
@@ -331,21 +322,20 @@ export const StepOne = ({
   
   return (
     <div className="form-step">
-      <h3><FiUser className="step-icon" /> Basic Details</h3>
-
       <div className="form-group">
         <label htmlFor="first_name">First Name *</label>
         <input
           type="text"
           id="first_name"
           name="first_name"
+          className={fieldClassName(getError('first_name'))}
           value={formData.first_name}
           onChange={handleLimitedChange}
           maxLength={FIELD_LIMITS.first_name.max}
           placeholder="Enter your first name"
-          required
+          autoComplete="given-name"
         />
-        {renderLengthError('first_name')}
+        <FieldMessage error={getError('first_name')} />
       </div>
       
       <div className="form-group">
@@ -354,13 +344,14 @@ export const StepOne = ({
           type="text"
           id="last_name"
           name="last_name"
+          className={fieldClassName(getError('last_name'))}
           value={formData.last_name}
           onChange={handleLimitedChange}
           maxLength={FIELD_LIMITS.last_name.max}
           placeholder="Enter your last name"
-          required
+          autoComplete="family-name"
         />
-        {renderLengthError('last_name')}
+        <FieldMessage error={getError('last_name')} />
       </div>
       
       <div className="form-group">
@@ -369,18 +360,21 @@ export const StepOne = ({
           id="email"
           name="email"
           type="email"
+          className={fieldClassName(getError('email') || emailDuplicateError)}
           value={formData.email}
           onChange={handleEmailChange}
           onBlur={handleEmailBlur}
-          placeholder="Enter Email"
+          placeholder="you@example.com"
           autoComplete="email"
-          required
+          inputMode="email"
         />
-        {isCheckingEmail && <small className="input-hint">Checking email availability...</small>}
-        {emailDuplicateError && <small className="input-error" style={{ color: 'red' }}>{emailDuplicateError}</small>}
+        <FieldMessage
+          checking={isCheckingEmail ? 'Checking email availability...' : ''}
+          error={emailDuplicateError || getError('email')}
+        />
       </div>
 
-      <div className="form-group photo-upload-section">
+      <div className={`form-group photo-upload-section ${getError('photo') ? 'has-error' : ''}`} id="photo">
         <label>
           Add Profile Photo 
           <span className="required-indicator"> *</span>
@@ -392,7 +386,7 @@ export const StepOne = ({
             <input
               id="photoFile"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
               onChange={handleFileChange}
               style={{ display: "none" }}
             />
@@ -476,6 +470,7 @@ export const StepOne = ({
             </div>
           </div>
         )}
+        <FieldMessage error={getError('photo')} hint={!getError('photo') ? 'JPG, PNG, or WEBP only (max 5MB). HEIC/iPhone photos are not supported — use camera or convert to JPG.' : ''} />
       </div>
 
       <div className="form-group">
@@ -484,21 +479,23 @@ export const StepOne = ({
           <input
             id="password"
             name="password"
+            className={fieldClassName(getError('password'))}
             type={showPassword ? "text" : "password"}
             value={formData.password}
             onChange={handlePasswordChange}
             placeholder="Enter Password"
             autoComplete="new-password"
-            required
           />
           <button
             type="button"
             className="password-toggle"
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
           </button>
         </div>
+        <FieldMessage error={getError('password')} />
         
         {formData.password && (
           <div className="password-requirements">
@@ -532,21 +529,23 @@ export const StepOne = ({
           <input
             id="confirmPassword"
             name="confirmPassword"
+            className={fieldClassName(getError('confirmPassword'))}
             type={showConfirmPassword ? "text" : "password"}
             value={formData.confirmPassword}
             onChange={handleChange}
-            placeholder="Confirm Password"
+            placeholder="Re-enter password"
             autoComplete="new-password"
-            required
           />
           <button
             type="button"
             className="password-toggle"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
           >
             {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
           </button>
         </div>
+        <FieldMessage error={getError('confirmPassword')} />
         
         {formData.confirmPassword && (
           <div className={`password-match ${formData.password === formData.confirmPassword ? 'valid' : 'invalid'}`}>
@@ -595,41 +594,4 @@ export const StepOne = ({
       )}
     </div>
   );
-};
-
-// Export the validation function for use in parent component
-export const validateStepOne = (formData, faceDetected) => {
-  const nameMaxLength = FIELD_LIMITS.first_name.max;
-  const isFirstNameValid = Boolean(formData.first_name) && formData.first_name.length <= nameMaxLength;
-  const isLastNameValid = Boolean(formData.last_name) && formData.last_name.length <= nameMaxLength;
-
-  const passwordValidation = {
-    minLength: formData.password?.length >= 8,
-    hasUppercase: /[A-Z]/.test(formData.password || ''),
-    hasLowercase: /[a-z]/.test(formData.password || ''),
-    hasNumber: /\d/.test(formData.password || ''),
-    hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>?]/.test(formData.password || '')
-  };
-  
-  const isPasswordValid = Object.values(passwordValidation).every(Boolean);
-  
-  return {
-    isValid: !!(
-      isFirstNameValid &&
-      isLastNameValid &&
-      formData.email &&
-      isPasswordValid &&
-      formData.password === formData.confirmPassword &&
-      faceDetected &&
-      (formData.photoFile || formData.selfieImage)
-    ),
-    errors: {
-      firstName: !isFirstNameValid,
-      lastName: !isLastNameValid,
-      email: !formData.email,
-      password: !isPasswordValid,
-      confirmPassword: formData.password !== formData.confirmPassword,
-      photo: !faceDetected || (!formData.photoFile && !formData.selfieImage)
-    }
-  };
 };

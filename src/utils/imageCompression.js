@@ -1,7 +1,23 @@
-const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'heic', 'heif']);
+const ACCEPTED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']);
+const HEIC_EXTENSIONS = new Set(['heic', 'heif']);
+const HEIC_MIME_HINTS = ['heic', 'heif'];
+
+export const isHeicFile = (file) => {
+  if (!file) {
+    return false;
+  }
+
+  const extension = (file.name || '').split('.').pop()?.toLowerCase();
+  if (HEIC_EXTENSIONS.has(extension)) {
+    return true;
+  }
+
+  const mimeType = (file.type || '').toLowerCase();
+  return HEIC_MIME_HINTS.some((hint) => mimeType.includes(hint));
+};
 
 export const isImageFile = (file) => {
-  if (!file) {
+  if (!file || isHeicFile(file)) {
     return false;
   }
 
@@ -10,8 +26,11 @@ export const isImageFile = (file) => {
   }
 
   const extension = (file.name || '').split('.').pop()?.toLowerCase();
-  return IMAGE_EXTENSIONS.has(extension);
+  return ACCEPTED_IMAGE_EXTENSIONS.has(extension);
 };
+
+export const HEIC_REJECTION_MESSAGE =
+  'HEIC/HEIF photos are not supported. Please upload JPG or PNG, or use the camera to take a photo.';
 
 const loadImageFromBitmap = async (file) => {
   if (typeof createImageBitmap !== 'function') {
@@ -183,8 +202,12 @@ export const prepareProfileImageForUpload = async (file, options = {}) => {
     return null;
   }
 
+  if (isHeicFile(file)) {
+    throw new Error(HEIC_REJECTION_MESSAGE);
+  }
+
   if (!isImageFile(file)) {
-    throw new Error('Please upload a valid image file (JPG or PNG).');
+    throw new Error('Please upload a valid image file (JPG, PNG, or WEBP).');
   }
 
   if (file.size > maxUploadBytes) {
@@ -200,6 +223,10 @@ export const prepareProfileImageForUpload = async (file, options = {}) => {
       finalSizeKb: Math.round(compressed.size / 1024),
     };
   } catch (compressionError) {
+    if (isHeicFile(file)) {
+      throw new Error(HEIC_REJECTION_MESSAGE);
+    }
+
     return {
       file,
       strategy: 'original_fallback',
