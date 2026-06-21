@@ -139,7 +139,7 @@ const Footer = () => {
               &copy; {new Date().getFullYear()} Kerala Engineers Association. All rights reserved.
             </p>
             <p className="design-credit">
-              Developed and Maintained by <a href="https://lsofito.com">Lsofito Innovations</a> </p>
+              Developed and Maintained by <a style={{color: '#41287b'}} href="https://lsofito.com">Lsofito Innovations</a> </p>
             <div className="footer-bottom-links">
               <a href="/privacy-policy">Privacy Policy</a>
               <a href="/terms-of-service">Terms of Service</a>

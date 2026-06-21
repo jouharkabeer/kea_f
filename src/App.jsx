@@ -37,6 +37,7 @@ import './contexts/notifications.css';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { TermsPage } from './components/common/legal/TermsAndConditions';
 import { PrivacyPolicyPage } from './components/common/legal/PrivacyPolicyPage';
+import NotFound from './pages/NotFound/NotFound';
 
 
 
@@ -82,6 +83,8 @@ function App() {
 
       <Route path="/terms-of-service" element={<TermsPage/>} />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage/>} />
+
+      <Route path="*" element={<NotFound />} />
 
 
 
