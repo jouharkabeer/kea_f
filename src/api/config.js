@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: `${BASE_URL}/auth/login/password/`,
     REGISTER: `${BASE_URL}/auth/register/`,
+    REGISTER_PROFILE_PICTURE: `${BASE_URL}/auth/register-profile-picture/`,
     VERIFY_EMAIL: `${BASE_URL}/auth/verify-email/`,
     REFRESH_TOKEN: `${BASE_URL}/auth/token/refresh/`,
     FORGOT_PASSWORD: `${BASE_URL}/auth/password-reset/`,
@@ -27,6 +28,7 @@ export const API_ENDPOINTS = {
     OTP_VERIFY: `${BASE_URL}/auth/otpverify/`,
     CLIENT_ERROR_LOG: `${BASE_URL}/auth/client-error-log/`,
     CHECK_USER_EXISTS: `${BASE_URL}/auth/check-user-exists/`,
+    RECOVER_REGISTERED_EMAIL: `${BASE_URL}/auth/recover-registered-email/`,
   },
   
   // User endpoints

@@ -230,6 +230,92 @@ export const registerUser = async (userData, maxRetries = 3) => {
 };
 
 /**
+ * Upload profile picture after JSON registration (separate from account creation).
+ */
+export const uploadRegistrationProfilePicture = async (
+  { userId, email, profileFile },
+  maxRetries = 2
+) => {
+  let lastError;
+  const requestTimeout = 120000;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const formData = new FormData();
+      formData.append('user_id', userId);
+      formData.append('email', email);
+      formData.append('profile_picture', profileFile);
+
+      const response = await fetchWithTimeout(
+        API_ENDPOINTS.AUTH.REGISTER_PROFILE_PICTURE,
+        { method: 'POST', body: formData },
+        requestTimeout
+      );
+
+      const contentType = response.headers.get('content-type');
+      let data = null;
+
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw {
+          message: `Server returned non-JSON response: ${text.substring(0, 200)}`,
+          originalError: text,
+          status: response.status,
+          isNetworkError: false,
+        };
+      }
+
+      if (!response.ok) {
+        throw {
+          message: data?.error || data?.message || 'Profile picture upload failed',
+          originalError: data,
+          status: response.status,
+          isNetworkError: false,
+          retryable: response.status >= 500,
+        };
+      }
+
+      return { data, status: response.status };
+    } catch (error) {
+      lastError = error;
+
+      const isNetworkError =
+        error.message === 'Request timeout' ||
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('NetworkError') ||
+        error.name === 'TypeError' ||
+        error.status === 'NETWORK_ERROR';
+
+      const isRetryable =
+        isNetworkError || error.retryable === true || (error.status >= 500 && error.status < 600);
+
+      if (attempt === maxRetries || !isRetryable) {
+        throw {
+          message: isNetworkError
+            ? 'Profile photo upload failed due to network issues. You can continue registration and add your photo later from your profile.'
+            : error.message || 'Profile picture upload failed',
+          originalError: error,
+          status: error.status || (isNetworkError ? 'NETWORK_ERROR' : error.status),
+          isNetworkError,
+          attempts: attempt + 1,
+          errorName: error?.name,
+          errorCause: error?.message,
+          requestTimeoutMs: requestTimeout,
+          isFormDataUpload: true,
+        };
+      }
+
+      const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+};
+
+/**
  * Send client-side registration errors to backend log file.
  * Fire-and-forget helper; never throws to avoid affecting user flows.
  */
@@ -309,6 +395,27 @@ export const isPhoneRegistered = async (phone) => {
 
   const result = await checkUserExists({ phone_number: cleaned });
   return Boolean(result.exists && result.fields?.includes('phone_number'));
+};
+
+/**
+ * Verify OTP and return the email registered to a mobile number.
+ */
+export const recoverRegisteredEmail = async ({ phone_number, otp, verification_id }) => {
+  const response = await fetch(API_ENDPOINTS.AUTH.RECOVER_REGISTERED_EMAIL, {
+    method: 'POST',
+    headers: combineHeaders(),
+    body: JSON.stringify({
+      phone_number,
+      otp,
+      verification_id: verification_id || null,
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw data;
+  }
+  return data;
 };
 
 /**

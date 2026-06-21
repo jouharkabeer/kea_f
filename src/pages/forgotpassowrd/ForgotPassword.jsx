@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ForgotPassword.css';
-import { forgotPassword } from '../../api/AuthApi';
+import { forgotPassword, isEmailRegistered } from '../../api/AuthApi';
 import { useNotification } from '../../contexts/NotificationContext';
+import FindRegisteredEmailPanel from './FindRegisteredEmailPanel';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [showEmailRecovery, setShowEmailRecovery] = useState(false);
   const { success, error: showError, info } = useNotification();
 
   // Email validation regex
@@ -45,14 +47,32 @@ const ForgotPassword = () => {
 
     setLoading(true);
     setError('');
-    info('Sending password reset email...');
+    info('Checking email...');
+
+    const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      // Use the AuthApi forgotPassword function
-      const data = await forgotPassword(email.trim().toLowerCase());
+      let emailExists;
+      try {
+        emailExists = await isEmailRegistered(normalizedEmail);
+      } catch (checkErr) {
+        const checkMsg = 'Unable to verify email address. Please check your connection and try again.';
+        setError(checkMsg);
+        showError(checkMsg);
+        return;
+      }
+
+      if (!emailExists) {
+        const notFoundMsg = 'No email found with this registered ID. Please check and try again.';
+        setError(notFoundMsg);
+        showError(notFoundMsg);
+        return;
+      }
+
+      info('Sending password reset email...');
+      await forgotPassword(normalizedEmail);
       setIsSubmitted(true);
       success('Password reset email sent successfully! Check your inbox.');
-      // console.log('✅ Password reset email sent successfully');
     } catch (err) {
       console.error('❌ Request error:', err);
       // Handle specific error messages from backend
@@ -187,6 +207,27 @@ const ForgotPassword = () => {
   }
 
   // Main forgot password form
+  if (showEmailRecovery) {
+    return (
+      <div className="forgot-password-page">
+        <div className="forgot-password-card">
+          <FindRegisteredEmailPanel
+            onUseEmail={(recoveredEmail) => {
+              setEmail(recoveredEmail);
+              setShowEmailRecovery(false);
+              setError('');
+              info('Email filled in. You can now send the reset link.');
+            }}
+            onCancel={() => {
+              setShowEmailRecovery(false);
+              setError('');
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="forgot-password-page">
       <div className="forgot-password-card">
@@ -255,6 +296,19 @@ const ForgotPassword = () => {
             )}
           </button>
         </form>
+
+        <div className="forgot-help-link-wrap">
+          <button
+            type="button"
+            className="btn-text-link"
+            onClick={() => {
+              setShowEmailRecovery(true);
+              setError('');
+            }}
+          >
+            Can't find your registered email?
+          </button>
+        </div>
 
         <div className="secondary-actions">
           <button

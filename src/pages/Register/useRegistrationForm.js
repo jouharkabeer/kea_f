@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   registerUser,
+  uploadRegistrationProfilePicture,
   logClientRegistrationError,
   isEmailRegistered,
   isPhoneRegistered,
@@ -195,7 +196,7 @@ export function useRegistrationForm() {
       setErrorMessage(msg);
       showError(msg);
       logRegistrationEvent('OTP_SEND_VALIDATION_FAILED', { reason: 'Missing contact number' }, 'warn');
-      return;
+      return false;
     }
 
     setIsLoading(true);
@@ -204,11 +205,13 @@ export function useRegistrationForm() {
       const data = await sendOTP(normalizedPhone);
       if (data.verification_id) setVerificationId(data.verification_id);
       success('OTP sent! Check your phone for the 4-digit code.');
+      return true;
     } catch (error) {
       const detail = error?.error || error?.message || 'Failed to send OTP. Please try again.';
       setErrorMessage(detail);
       showError(detail);
       logRegistrationEvent('OTP_SEND_FAILED', { message: detail });
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -332,29 +335,13 @@ export function useRegistrationForm() {
 
     let compressedProfileSizeKb = null;
     let imageUploadStrategy = null;
+    let profileFile = null;
 
     try {
       const validUsername = generateUsername(formData.first_name, formData.last_name, formData.email);
       const hasProfilePicture = formData.photoFile || formData.selfieImage;
-      let response;
 
       if (hasProfilePicture) {
-        const formDataPayload = new FormData();
-        formDataPayload.append('user_type', 'member');
-        formDataPayload.append('username', validUsername);
-        formDataPayload.append('email', formData.email.trim());
-        formDataPayload.append('phone_number', normalizedPhone);
-        formDataPayload.append('company_name', formData.companyName || '');
-        formDataPayload.append('designation', formData.designation || '');
-        formDataPayload.append('address', formData.address || '');
-        formDataPayload.append('blood_group', formData.bloodGroup || '');
-        formDataPayload.append('first_name', formData.first_name.trim());
-        formDataPayload.append('last_name', formData.last_name.trim());
-        formDataPayload.append('college_name', formData.college_name || '');
-        formDataPayload.append('department_of_study', formData.department_of_study || '');
-        formDataPayload.append('year_of_graduation', formData.year_of_graduation || '');
-        formDataPayload.append('password', formData.password);
-
         let imagePrepResult = null;
         if (formData.photoFile) {
           imagePrepResult = await prepareProfileImageForUpload(formData.photoFile);
@@ -362,48 +349,43 @@ export function useRegistrationForm() {
           imagePrepResult = await prepareDataUrlForUpload(formData.selfieImage);
         }
 
-        const profileFile = imagePrepResult?.file;
+        profileFile = imagePrepResult?.file || null;
         imageUploadStrategy = imagePrepResult?.strategy || null;
         if (profileFile) {
           compressedProfileSizeKb = Math.round(profileFile.size / 1024);
-          formDataPayload.append('profile_picture', profileFile);
         }
-
-        logRegistrationEvent(
-          'REGISTER_REQUEST_START',
-          {
-            uploadType: 'multipart',
-            compressedProfileSizeKb,
-            imageUploadStrategy,
-            originalPhotoSizeKb: imagePrepResult?.originalSizeKb ?? null,
-            fallbackReason: imagePrepResult?.fallbackReason ?? null,
-            phoneNumberLength: normalizedPhone.length,
-          },
-          'info'
-        );
-
-        response = await registerUser(formDataPayload);
-      } else {
-        const payload = {
-          user_type: 'member',
-          username: validUsername,
-          email: formData.email.trim(),
-          phone_number: normalizedPhone,
-          company_name: formData.companyName || '',
-          designation: formData.designation || '',
-          address: formData.address || '',
-          blood_group: formData.bloodGroup || '',
-          first_name: formData.first_name.trim(),
-          last_name: formData.last_name.trim(),
-          college_name: formData.college_name || '',
-          department_of_study: formData.department_of_study || '',
-          year_of_graduation: formData.year_of_graduation || '',
-          password: formData.password,
-        };
-
-        logRegistrationEvent('REGISTER_REQUEST_START', { uploadType: 'json', phoneNumberLength: normalizedPhone.length }, 'info');
-        response = await registerUser(payload);
       }
+
+      const payload = {
+        user_type: 'member',
+        username: validUsername,
+        email: formData.email.trim(),
+        phone_number: normalizedPhone,
+        company_name: formData.companyName || '',
+        designation: formData.designation || '',
+        address: formData.address || '',
+        blood_group: formData.bloodGroup || '',
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        college_name: formData.college_name || '',
+        department_of_study: formData.department_of_study || '',
+        year_of_graduation: formData.year_of_graduation || '',
+        password: formData.password,
+      };
+
+      logRegistrationEvent(
+        'REGISTER_REQUEST_START',
+        {
+          uploadType: 'json',
+          hasDeferredPhoto: Boolean(profileFile),
+          compressedProfileSizeKb,
+          imageUploadStrategy,
+          phoneNumberLength: normalizedPhone.length,
+        },
+        'info'
+      );
+
+      const response = await registerUser(payload);
 
       const { data: resData, status } = response || {};
 
@@ -421,6 +403,39 @@ export function useRegistrationForm() {
         const newUserId = resData?.user_id;
         if (!newUserId) throw { message: 'Registration failed: missing user ID in response.' };
         setUserId(newUserId);
+
+        if (profileFile) {
+          logRegistrationEvent(
+            'REGISTER_PHOTO_UPLOAD_START',
+            { compressedProfileSizeKb, imageUploadStrategy },
+            'info'
+          );
+
+          try {
+            await uploadRegistrationProfilePicture({
+              userId: newUserId,
+              email: formData.email.trim(),
+              profileFile,
+            });
+            logRegistrationEvent('REGISTER_PHOTO_UPLOAD_SUCCESS', { compressedProfileSizeKb }, 'info');
+          } catch (photoError) {
+            logRegistrationEvent('REGISTER_PHOTO_UPLOAD_FAILED', {
+              compressedProfileSizeKb,
+              imageUploadStrategy,
+              message: photoError.message,
+              status: photoError.status,
+              attempts: photoError.attempts,
+              errorCause: photoError.errorCause,
+            });
+            info(
+              'Account created. Photo upload failed — you can add your profile picture later from your profile. Opening payment...',
+              8000
+            );
+            handleInitiatePayment(newUserId);
+            return;
+          }
+        }
+
         success('Registration successful! Opening payment...');
         handleInitiatePayment(newUserId);
         return;
@@ -459,7 +474,8 @@ export function useRegistrationForm() {
         message: error.message,
         errorName: error.errorName || error.name,
         requestTimeoutMs: error.requestTimeoutMs,
-        uploadType: error.isFormDataUpload ? 'multipart' : 'json',
+        errorCause: error.errorCause || error.originalError?.message,
+        uploadType: profileFile ? 'deferred_multipart' : 'json',
         compressedProfileSizeKb,
         imageUploadStrategy,
       });

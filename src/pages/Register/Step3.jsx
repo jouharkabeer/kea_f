@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FiSend, FiCheckCircle, FiShield, FiInfo, FiLock, FiFileText } from 'react-icons/fi';
 import { FieldMessage } from './FieldMessage';
+import { useOtpResendTimer } from '../../utils/useOtpResendTimer';
 
 export const StepThree = ({
   formData,
@@ -13,12 +14,18 @@ export const StepThree = ({
 }) => {
   const [isSendingOTP, setIsSendingOTP] = useState(false);
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const { secondsLeft, canResend, startTimer } = useOtpResendTimer(60);
 
   const onSendOTP = async () => {
-    if (isSendingOTP || isContactVerified) return;
+    if (isSendingOTP || isContactVerified || (otpSent && !canResend)) return;
     setIsSendingOTP(true);
     try {
-      await handleSendOTP();
+      const sent = await handleSendOTP();
+      if (sent) {
+        setOtpSent(true);
+        startTimer();
+      }
     } finally {
       setIsSendingOTP(false);
     }
@@ -51,12 +58,16 @@ export const StepThree = ({
             type="button"
             className={`otp-button ${isContactVerified ? 'otp-sent' : ''}`}
             onClick={onSendOTP}
-            disabled={isSendingOTP || isContactVerified || parentIsLoading}
+            disabled={isSendingOTP || isContactVerified || parentIsLoading || (otpSent && !canResend)}
           >
             {isSendingOTP ? (
               'Sending...'
             ) : isContactVerified ? (
               <span><FiCheckCircle size={16} /> Verified</span>
+            ) : otpSent && !canResend ? (
+              `Resend OTP in ${secondsLeft}s`
+            ) : otpSent ? (
+              <span><FiSend size={16} /> Resend OTP</span>
             ) : (
               <span><FiSend size={16} /> Send OTP</span>
             )}
@@ -93,7 +104,18 @@ export const StepThree = ({
               )}
             </button>
           </div>
-          <FieldMessage error={fieldErrors.otp} hint={!fieldErrors.otp ? 'Did not receive it? Tap Send OTP again.' : ''} />
+          <FieldMessage
+            error={fieldErrors.otp}
+            hint={
+              !fieldErrors.otp && !isContactVerified
+                ? otpSent && !canResend
+                  ? `You can resend OTP in ${secondsLeft} second${secondsLeft === 1 ? '' : 's'}.`
+                  : otpSent
+                    ? 'Did not receive it? Tap Resend OTP.'
+                    : 'Tap Send OTP to receive a 4-digit code on your mobile.'
+                : ''
+            }
+          />
         </div>
 
         {isContactVerified && (

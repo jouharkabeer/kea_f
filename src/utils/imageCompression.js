@@ -2,6 +2,15 @@ const ACCEPTED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp'])
 const HEIC_EXTENSIONS = new Set(['heic', 'heif']);
 const HEIC_MIME_HINTS = ['heic', 'heif'];
 
+export const MAX_SAFE_UPLOAD_BYTES = 600 * 1024;
+
+const COMPRESSION_TIERS = [
+  { maxWidth: 1024, maxHeight: 1024, quality: 0.78, maxSizeBytes: 500 * 1024 },
+  { maxWidth: 800, maxHeight: 800, quality: 0.72, maxSizeBytes: 400 * 1024 },
+  { maxWidth: 640, maxHeight: 640, quality: 0.65, maxSizeBytes: 320 * 1024 },
+  { maxWidth: 480, maxHeight: 480, quality: 0.55, maxSizeBytes: 250 * 1024 },
+];
+
 export const isHeicFile = (file) => {
   if (!file) {
     return false;
@@ -32,13 +41,24 @@ export const isImageFile = (file) => {
 export const HEIC_REJECTION_MESSAGE =
   'HEIC/HEIF photos are not supported. Please upload JPG or PNG, or use the camera to take a photo.';
 
-const loadImageFromBitmap = async (file) => {
+export const IMAGE_PREP_FAILED_MESSAGE =
+  'Could not prepare your photo for upload. Please try a smaller JPG/PNG image or use the camera to take a new photo.';
+
+const loadImageFromBitmap = async (file, maxWidth, maxHeight) => {
   if (typeof createImageBitmap !== 'function') {
     return null;
   }
 
+  const resizeOptions =
+    maxWidth && maxHeight
+      ? { resizeWidth: maxWidth, resizeHeight: maxHeight, resizeQuality: 'high' }
+      : undefined;
+
   try {
-    const bitmap = await createImageBitmap(file);
+    const bitmap = resizeOptions
+      ? await createImageBitmap(file, resizeOptions)
+      : await createImageBitmap(file);
+
     return {
       drawTarget: bitmap,
       width: bitmap.width,
@@ -46,7 +66,17 @@ const loadImageFromBitmap = async (file) => {
       cleanup: () => bitmap.close?.(),
     };
   } catch {
-    return null;
+    try {
+      const bitmap = await createImageBitmap(file);
+      return {
+        drawTarget: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        cleanup: () => bitmap.close?.(),
+      };
+    } catch {
+      return null;
+    }
   }
 };
 
@@ -97,13 +127,17 @@ const loadImageFromDataUrl = (file) =>
     reader.readAsDataURL(file);
   });
 
-const loadImageSource = async (file) => {
-  const loaders = [loadImageFromBitmap, loadImageFromObjectUrl, loadImageFromDataUrl];
+const loadImageSource = async (file, maxWidth, maxHeight) => {
+  const loaders = [
+    () => loadImageFromBitmap(file, maxWidth, maxHeight),
+    () => loadImageFromObjectUrl(file),
+    () => loadImageFromDataUrl(file),
+  ];
   let lastError = null;
 
   for (const loader of loaders) {
     try {
-      const source = await loader(file);
+      const source = await loader();
       if (source?.width > 0 && source?.height > 0) {
         return source;
       }
@@ -165,17 +199,20 @@ export const compressImageFile = async (
     return file;
   }
 
-  if (file.size <= 250 * 1024 && (file.type === 'image/jpeg' || file.name?.toLowerCase().endsWith('.jpg'))) {
+  if (
+    file.size <= 200 * 1024 &&
+    (file.type === 'image/jpeg' || file.name?.toLowerCase().endsWith('.jpg'))
+  ) {
     return file;
   }
 
-  const source = await loadImageSource(file);
+  const source = await loadImageSource(file, maxWidth, maxHeight);
   const canvas = drawImageToCanvas(source, maxWidth, maxHeight);
 
   let currentQuality = quality;
   let compressedFile = await canvasToJpegFile(canvas, file.name || 'profile.jpg', currentQuality);
 
-  while (compressedFile.size > maxSizeBytes && currentQuality > 0.45) {
+  while (compressedFile.size > maxSizeBytes && currentQuality > 0.4) {
     currentQuality -= 0.08;
     compressedFile = await canvasToJpegFile(canvas, file.name || 'profile.jpg', currentQuality);
   }
@@ -193,7 +230,8 @@ export const compressDataUrl = async (dataUrl, options = {}) => {
 };
 
 /**
- * Compress image for upload; fall back to original file if compression fails on mobile browsers.
+ * Compress image for upload using multiple tiers.
+ * Never falls back to a large original file — that causes mobile network failures.
  */
 export const prepareProfileImageForUpload = async (file, options = {}) => {
   const maxUploadBytes = 5 * 1024 * 1024;
@@ -214,27 +252,49 @@ export const prepareProfileImageForUpload = async (file, options = {}) => {
     throw new Error('Image size exceeds 5MB limit. Please choose a smaller photo.');
   }
 
-  try {
-    const compressed = await compressImageFile(file, options);
-    return {
-      file: compressed,
-      strategy: 'compressed',
-      originalSizeKb: Math.round(file.size / 1024),
-      finalSizeKb: Math.round(compressed.size / 1024),
-    };
-  } catch (compressionError) {
-    if (isHeicFile(file)) {
-      throw new Error(HEIC_REJECTION_MESSAGE);
-    }
+  const tiers = options.tiers || COMPRESSION_TIERS;
+  let lastError = null;
+  let bestResult = null;
 
+  for (let index = 0; index < tiers.length; index += 1) {
+    const tier = tiers[index];
+    try {
+      const compressed = await compressImageFile(file, tier);
+      const result = {
+        file: compressed,
+        strategy: index === 0 ? 'compressed' : `compressed_tier_${index + 1}`,
+        originalSizeKb: Math.round(file.size / 1024),
+        finalSizeKb: Math.round(compressed.size / 1024),
+        compressionTier: index + 1,
+      };
+
+      if (compressed.size <= tier.maxSizeBytes || compressed.size <= MAX_SAFE_UPLOAD_BYTES) {
+        return result;
+      }
+
+      if (!bestResult || compressed.size < bestResult.file.size) {
+        bestResult = result;
+      }
+    } catch (compressionError) {
+      lastError = compressionError;
+    }
+  }
+
+  if (bestResult && bestResult.file.size <= MAX_SAFE_UPLOAD_BYTES) {
+    return bestResult;
+  }
+
+  if (file.size <= MAX_SAFE_UPLOAD_BYTES) {
     return {
       file,
-      strategy: 'original_fallback',
+      strategy: 'small_original',
       originalSizeKb: Math.round(file.size / 1024),
       finalSizeKb: Math.round(file.size / 1024),
-      fallbackReason: compressionError?.message || 'compression_failed',
+      fallbackReason: lastError?.message || 'compression_failed_small_file',
     };
   }
+
+  throw new Error(lastError?.message || IMAGE_PREP_FAILED_MESSAGE);
 };
 
 export const prepareDataUrlForUpload = async (dataUrl, options = {}) => {
