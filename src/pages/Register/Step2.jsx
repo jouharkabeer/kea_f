@@ -61,7 +61,7 @@ export const StepTwo = ({
       <div className="form-group">
         <label htmlFor="companyName">
           <FiBriefcase className="field-icon" />
-          Company Name
+          Company Name *
         </label>
         <input
           id="companyName"
@@ -71,8 +71,9 @@ export const StepTwo = ({
           value={formData.companyName}
           onChange={handleLimitedChange}
           maxLength={FIELD_LIMITS.companyName.max}
-          placeholder="Your employer (optional)"
+          placeholder="Your employer"
           autoComplete="organization"
+          required
         />
         <FieldMessage error={getError('companyName')} />
       </div>
@@ -80,7 +81,7 @@ export const StepTwo = ({
       <div className="form-group">
         <label htmlFor="designation">
           <FiUser className="field-icon" />
-          Designation
+          Designation *
         </label>
         <input
           id="designation"
@@ -90,8 +91,9 @@ export const StepTwo = ({
           value={formData.designation}
           onChange={handleLimitedChange}
           maxLength={FIELD_LIMITS.designation.max}
-          placeholder="Your job title (optional)"
+          placeholder="Your job title"
           autoComplete="organization-title"
+          required
         />
         <FieldMessage error={getError('designation')} />
       </div>
@@ -100,7 +102,7 @@ export const StepTwo = ({
         <h4 className="section-title">Academic Information</h4>
 
         <div className="form-group">
-          <label htmlFor="college_name">College / University</label>
+          <label htmlFor="college_name">College / University *</label>
           <input
             id="college_name"
             name="college_name"
@@ -109,8 +111,9 @@ export const StepTwo = ({
             value={formData.college_name || ''}
             onChange={handleLimitedChange}
             maxLength={FIELD_LIMITS.college_name.max}
-            placeholder="Institution name (optional)"
+            placeholder="Institution name"
             autoComplete="off"
+            required
           />
           <FieldMessage error={getError('college_name')} />
         </div>
@@ -118,7 +121,7 @@ export const StepTwo = ({
         <div className="form-group">
           <label htmlFor="department_of_study">
             <FiBookOpen className="field-icon" />
-            Department of Study
+            Department of Study *
           </label>
           <input
             id="department_of_study"
@@ -128,8 +131,9 @@ export const StepTwo = ({
             value={formData.department_of_study || ''}
             onChange={handleLimitedChange}
             maxLength={FIELD_LIMITS.department_of_study.max}
-            placeholder="e.g. Computer Science (optional)"
+            placeholder="e.g. Computer Science"
             autoComplete="off"
+            required
           />
           <FieldMessage error={getError('department_of_study')} />
         </div>
@@ -137,22 +141,24 @@ export const StepTwo = ({
         <div className="form-group">
           <label htmlFor="year_of_graduation">
             <FiCalendar className="field-icon" />
-            Year of Graduation
+            Year of Graduation *
           </label>
           <select
             id="year_of_graduation"
             name="year_of_graduation"
             value={formData.year_of_graduation || ''}
             onChange={handleChange}
-            className="form-select"
+            className={`form-select ${getError('year_of_graduation') ? 'field-input--error' : ''}`}
+            required
           >
-            <option value="">Select year (optional)</option>
+            <option value="">Select year</option>
             {yearOptions.map((year) => (
               <option key={year} value={year}>
                 {year}
               </option>
             ))}
           </select>
+          <FieldMessage error={getError('year_of_graduation')} />
         </div>
       </div>
 
@@ -184,7 +190,7 @@ export const StepTwo = ({
       <div className="form-group">
         <label htmlFor="address">
           <FiMapPin className="field-icon" />
-          Address
+          Address *
         </label>
         <input
           id="address"
@@ -192,9 +198,11 @@ export const StepTwo = ({
           type="text"
           className={fieldClassName(getError('address'))}
           value={formData.address}
-          onChange={handleChange}
-          placeholder="Street, city, state (optional)"
+          onChange={handleLimitedChange}
+          maxLength={FIELD_LIMITS.address.max}
+          placeholder="Street, city, state"
           autoComplete="street-address"
+          required
         />
         <FieldMessage error={getError('address')} />
       </div>

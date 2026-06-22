@@ -12,6 +12,7 @@ export const FIELD_LIMITS = {
   college_name: { max: 50, label: 'College/University Name' },
   department_of_study: { max: 30, label: 'Department of Study' },
   contactNo: { max: 15, label: 'Contact Number' },
+  address: { max: 255, label: 'Address' },
 };
 
 export const INITIAL_FORM_DATA = {

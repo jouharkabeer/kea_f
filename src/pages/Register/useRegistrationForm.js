@@ -24,6 +24,21 @@ export function useRegistrationForm() {
   const { success, error: showError } = useNotification();
   const formTopRef = useRef(null);
 
+  const getIndianTimestamp = useCallback(
+    () =>
+      new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).format(new Date()),
+    []
+  );
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -61,18 +76,30 @@ export function useRegistrationForm() {
       hasPhotoFile: Boolean(formData.photoFile),
       hasSelfie: Boolean(formData.selfieImage),
       photoFileSizeKb: formData.photoFile ? Math.round(formData.photoFile.size / 1024) : null,
+      currentStepLabel: `step_${currentStep}`,
+      currentRoute: window.location.pathname,
+      referrer: document.referrer || null,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
     };
-  }, [formData]);
+  }, [currentStep, formData]);
 
   const logRegistrationEvent = useCallback(
     (eventName, details = {}, level = 'error') => {
+      const normalizedDetails = {
+        ...details,
+        firstErrorField: details?.firstErrorField || null,
+        message: details?.message || null,
+      };
+
       const logEntry = {
         timestamp: new Date().toISOString(),
+        timestamp_ist: getIndianTimestamp(),
         event: eventName,
         step: currentStep,
         level,
+        summary: `${eventName} at step ${currentStep}`,
         context: getRegistrationLogContext(),
-        details,
+        details: normalizedDetails,
       };
 
       const prefix = `[Registration] ${eventName}`;
@@ -82,7 +109,7 @@ export function useRegistrationForm() {
 
       void logClientRegistrationError(logEntry);
     },
-    [currentStep, getRegistrationLogContext]
+    [currentStep, getIndianTimestamp, getRegistrationLogContext]
   );
 
   const scrollToField = (fieldName) => {
@@ -98,7 +125,12 @@ export function useRegistrationForm() {
     scrollToField(validation.firstErrorField);
     logRegistrationEvent(
       'STEP_VALIDATION_FAILED',
-      { step: currentStep, fieldErrors: validation.fieldErrors },
+      {
+        step: currentStep,
+        fieldErrors: validation.fieldErrors,
+        firstErrorField: validation.firstErrorField,
+        message: validation.message,
+      },
       'warn'
     );
   };
@@ -427,9 +459,9 @@ export function useRegistrationForm() {
               attempts: photoError.attempts,
               errorCause: photoError.errorCause,
             });
-            info(
-              'Account created. Photo upload failed — you can add your profile picture later from your profile. Opening payment...',
-              8000
+            success(
+              'Account created, but photo upload failed. Please log in and update it later from Edit Profile. Opening payment...',
+              9000
             );
             handleInitiatePayment(newUserId);
             return;

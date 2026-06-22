@@ -81,16 +81,32 @@ export const validateStepOne = (formData, faceDetected) => {
 export const validateStepTwo = (formData) => {
   const fieldErrors = {};
 
-  ['companyName', 'designation', 'college_name', 'department_of_study', 'contactNo'].forEach((key) => {
-    if (formData[key]) {
-      checkMaxLength(formData[key], key, fieldErrors);
+  const requiredTextFields = [
+    { key: 'companyName', label: 'Company name' },
+    { key: 'designation', label: 'Designation' },
+    { key: 'college_name', label: 'College / University' },
+    { key: 'department_of_study', label: 'Department of study' },
+    { key: 'address', label: 'Address' },
+  ];
+
+  requiredTextFields.forEach(({ key, label }) => {
+    if (!formData[key]?.trim()) {
+      fieldErrors[key] = `${label} is required.`;
+    } else {
+      checkMaxLength(formData[key].trim(), key, fieldErrors);
     }
   });
+
+  if (!formData.year_of_graduation) {
+    fieldErrors.year_of_graduation = 'Year of graduation is required.';
+  }
 
   if (!formData.contactNo?.trim()) {
     fieldErrors.contactNo = 'Contact number is required.';
   } else if (!isValidPhone(formData.contactNo)) {
     fieldErrors.contactNo = 'Enter a valid 10-digit Indian mobile number.';
+  } else {
+    checkMaxLength(formData.contactNo, 'contactNo', fieldErrors);
   }
 
   return buildResult(fieldErrors);

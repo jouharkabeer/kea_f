@@ -294,8 +294,8 @@ export const uploadRegistrationProfilePicture = async (
       if (attempt === maxRetries || !isRetryable) {
         throw {
           message: isNetworkError
-            ? 'Profile photo upload failed due to network issues. You can continue registration and add your photo later from your profile.'
-            : error.message || 'Profile picture upload failed',
+            ? 'Profile photo upload failed due to network issues. Please log in and update it later from Edit Profile.'
+            : error.message || 'Profile photo upload failed. Please log in and update it later from Edit Profile.',
           originalError: error,
           status: error.status || (isNetworkError ? 'NETWORK_ERROR' : error.status),
           isNetworkError,

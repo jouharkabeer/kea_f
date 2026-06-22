@@ -72,8 +72,8 @@ function Login() {
 
         <div className="login-links">
           <Link to="/forgot-password">Forgot Password?</Link>
-          {/* <Link to="/register">Sign Up</Link> */}
-          <Link >Sign Up</Link>
+          <Link to="/register">Sign Up</Link>
+          {/* <Link >Sign Up</Link> */}
         </div>
       </form>
     </div>
