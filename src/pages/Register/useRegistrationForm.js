@@ -236,13 +236,22 @@ export function useRegistrationForm() {
     try {
       const data = await sendOTP(normalizedPhone);
       if (data.verification_id) setVerificationId(data.verification_id);
+      logRegistrationEvent(
+        'OTP_SENT',
+        {
+          phoneNumber: normalizedPhone,
+          verificationId: data.verification_id || null,
+          usedFallbackOtp: Boolean(data.test_otp),
+        },
+        'info'
+      );
       success('OTP sent! Check your phone for the 4-digit code.');
       return true;
     } catch (error) {
       const detail = error?.error || error?.message || 'Failed to send OTP. Please try again.';
       setErrorMessage(detail);
       showError(detail);
-      logRegistrationEvent('OTP_SEND_FAILED', { message: detail });
+      logRegistrationEvent('OTP_SEND_FAILED', { phoneNumber: normalizedPhone, message: detail });
       return false;
     } finally {
       setIsLoading(false);
@@ -250,29 +259,56 @@ export function useRegistrationForm() {
   };
 
   const handleVerifyOTP = async () => {
-    if (!formData.otp?.trim()) {
+    const otpEntered = formData.otp?.trim() || '';
+    if (!otpEntered) {
       const msg = 'Please enter the OTP sent to your phone.';
       setFieldErrors((prev) => ({ ...prev, otp: msg }));
       setErrorMessage(msg);
       showError(msg);
+      logRegistrationEvent(
+        'OTP_VERIFY_FAILED',
+        {
+          phoneNumber: getNormalizedPhone(),
+          otp: otpEntered,
+          verified: false,
+          reason: 'Missing OTP',
+        },
+        'warn'
+      );
       return;
     }
 
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const payload = { phone_number: getNormalizedPhone(), otp: formData.otp.trim() };
+      const payload = { phone_number: getNormalizedPhone(), otp: otpEntered };
       if (verificationId) payload.verification_id = verificationId;
       await verifyOTP(payload);
       setIsContactVerified(true);
       clearFieldError('otp');
+      logRegistrationEvent(
+        'OTP_VERIFIED',
+        {
+          phoneNumber: getNormalizedPhone(),
+          otp: otpEntered,
+          verified: true,
+          verificationId: verificationId || null,
+        },
+        'info'
+      );
       success('Phone number verified successfully!');
     } catch (error) {
       const detail = error?.error || error?.message || 'Invalid OTP. Please try again.';
       setFieldErrors((prev) => ({ ...prev, otp: detail }));
       setErrorMessage(detail);
       showError(detail);
-      logRegistrationEvent('OTP_VERIFY_FAILED', { message: detail, verificationId });
+      logRegistrationEvent('OTP_VERIFY_FAILED', {
+        phoneNumber: getNormalizedPhone(),
+        otp: otpEntered,
+        verified: false,
+        message: detail,
+        verificationId: verificationId || null,
+      });
     } finally {
       setIsLoading(false);
     }
