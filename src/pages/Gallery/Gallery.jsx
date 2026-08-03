@@ -25,6 +25,10 @@ import annual_12 from '../../assets/gallery/10019.jpg'
 import annual_13 from '../../assets/gallery/10020.jpg'
 import annual_14 from '../../assets/gallery/10021.jpg'
 import annual_15 from '../../assets/gallery/10022.jpg'
+import football26_1 from '../../assets/gallery/football26_1.jpeg'
+import football26_2 from '../../assets/gallery/football26_2.jpeg'
+import football26_3 from '../../assets/gallery/football26_3.jpeg'
+import football26_4 from '../../assets/gallery/football26_4.jpeg'
 
 // Import Swiper styles
 import 'swiper/css';
@@ -35,7 +39,7 @@ import './Gallery.css';
 
 const Gallery = () => {
   // Define categories
-  const categories = ['New Year 2020', 'Football Tournament 2020', 'Workshop 2020', 'KEA Annual Day', 'KEA Cricket Tournament'];
+  const categories = ['Football 2026', 'New Year 2020', 'Football Tournament 2020', 'Workshop 2020', 'KEA Annual Day', 'KEA Cricket Tournament'];
 
   // Example image data
   const images = [
@@ -182,11 +186,35 @@ const Gallery = () => {
     src: annual_15, 
     alt: 'Gallery Image 24', 
     category: 'KEA Annual Day', 
-  }
+  },
+  {
+    id: 25, 
+    src: football26_1, 
+    alt: 'Gallery Image 25',
+    category: 'Football 2026',
+  },
+  {
+    id: 26, 
+    src: football26_2, 
+    alt: 'Gallery Image 26',
+    category: 'Football 2026',
+  },
+  {
+    id: 27,
+    src: football26_3,
+    alt: 'Gallery Image 27',
+    category: 'Football 2026',
+  },
+  {
+    id: 28,
+    src: football26_4,
+    alt: 'Gallery Image 28',
+    category: 'Football 2026',
+  },
   ];
 
   // State
-  const [selectedCategory, setSelectedCategory] = useState('New Year 2020');
+  const [selectedCategory, setSelectedCategory] = useState('Football 2026');
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);

@@ -4,6 +4,7 @@ import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import bloodcamp from '../../../assets/newsarticles/bloodcamp.jpg'
 import magazine from '../../../assets/newsarticles/magazine.jpg'
 import football from '../../../assets/newsarticles/football.jpg'
+import football2026 from '../../../assets/newsarticles/football.jpeg'
 import soccor from '../../../assets/newsarticles/soccor.jpg'
 import badminton from '../../../assets/newsarticles/badminton.jpg'
 import meet from '../../../assets/newsarticles/meet.jpg'
@@ -11,6 +12,37 @@ import meet from '../../../assets/newsarticles/meet.jpg'
 
 
 const articles = [
+  {
+    id: 1,
+    title: "KEA Inter-Alumni Football Tournament 2026",
+    date: "August 2, 2026",
+    description: `🏆 KEA Inter-Alumni Football Tournament 2026 ⚽
+
+Congratulations to all the players and teams who participated in today's tournament!
+
+🏆 Open Category
+🥇 Champions: GEC Thrissur
+🥈 Runner-Up: LBS Kasaragod
+
+🏆 Masters Category
+🥇 Champions: GEC Thrissur
+🥈 Runner-Up: NSS Palakkad Team 2
+
+A big congratulations to all the winners and participants. Thank you to everyone who came to support the event and made it a grand success.
+
+Special thanks & appreciation to our Secretary Shanoj, Faseela, Jishith, Varun, Betta, Dilshan, Joseam Sir, Hiran, Deeraj, and the entire team for their excellent coordination and dedication.
+
+Special thanks to:
+• Trendssqures – Worlds of Gardens (Sponsor)
+• Narayana Health (Medical Partner)
+• SnapShare (Event Engagement Partner)
+
+Thank you all once again for your support and teamwork. Looking forward to seeing you at our next KEA event!
+
+Arjun - President
+On behalf of KEA EC`,
+    image: football2026,
+  },
   {
     id: 1,
     title: "Blood Donation Camp.",

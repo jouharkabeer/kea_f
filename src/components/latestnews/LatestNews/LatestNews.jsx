@@ -1,43 +1,50 @@
 import React from "react";
 import "./LatestNews.css";
 import badminton from '../../../assets/newsarticles/badminton.jpg'
+import football from '../../../assets/newsarticles/football.jpeg'
 // Sample news data
 
 const newsArticles = [
   {
-    id: 1,
-    title: "Badminton tournament 2025.",
-    date: "February 01, 2025",
+    id: 1, 
+    title: "KEA Inter-Alumni Football Tournament 2026.",
+    date: "August 2, 2026",
     description:
-      "Inauguration by Varsha V Belawadi, Karnataka State Badminton Player.",
-    image: badminton,
+      "The KEA Inter-Alumni Football Tournament 2026 was a thrilling event that brought together alumni from various batches to compete in a friendly yet competitive football tournament. The event was held at the KEA Sports Complex, and it witnessed enthusiastic participation from alumni teams representing different years.",
+    image: football // Replace with actual image
   },
   {
     id: 2,
+    title: "Badminton tournament 2025.",
+    date: "February 01, 2025",
+    image: badminton,
+  },
+  {
+    id: 3,
     title: "Inter Alumini Football Tournament 2025.",
     date: "July 26, 2025",
     image: "https://via.placeholder.com/300x200", // Replace with actual image
   },
   {
-    id: 3,
+    id: 4,
     title: "K-Talk KEA Talk Series'2025.",
     date: "February 01, 2025",
     image: "https://via.placeholder.com/300x200", // Replace with actual image
   },
   {
-    id: 4,
+    id: 5,
     title: "Onam Special Charity Drive 2025.",
     date: "August 24, 2025",
     image: "https://via.placeholder.com/300x200", // Replace with actual image
   },
  {
-    id: 5,
+    id: 6,
     title: "Annual Day 2025.",
     date: "November 09, 2025",
     image: "https://via.placeholder.com/300x200", // Replace with actual image
   },
 {
-    id: 6,
+    id: 7,
     title: "Career Connect 2025.",
     date: "November 09, 2025",
     image: "https://via.placeholder.com/300x200", // Replace with actual image
