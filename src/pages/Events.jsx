@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './Events.css';
 import CareerConnectImage from '../assets/programs/CareerConnect.jpeg';
 import AnnualDayImage from '../assets/programs/AnnualDay.jpeg';
+import AnnualDayImage26 from '../assets/programs/AnnualDay26.jpeg';
 import Football from '../assets/programs/Football.jpeg'
 import Magazine from '../assets/programs/magazine.jpg'
 import music from '../assets/newsarticles/meet.jpg'
@@ -15,6 +16,9 @@ const Events = () => {
     window.open('https://tiqr.events/e/KEABangalore-AnnualDay-2025-1465/', '_blank');
   };
 
+  const handleAnnualDay26Register = () => {
+    window.open('https://tiqr.events/e/KEA-Kerala-Engineers-Association-Annual-Day-2026-2103', '_blank');
+  };
   return (
     <div className="events-page">
       <div className="events-container">
@@ -24,6 +28,49 @@ const Events = () => {
         </div>
 
         <div className="events-grid">
+
+                  <div className="event-card">
+            <div className="event-image">
+
+              <img src={AnnualDayImage26} alt="KEA Annual Day 2026" onClick={() => showImage(AnnualDayImage26)}/>
+
+              {/* <ImagePopup show={show} handleClose={closeImage} image={selectedImage} /> */}
+
+            </div>
+            <div className="event-content">
+              <h2>KEA Annual Day 2026</h2>
+              <div className="event-details">
+                <div className="event-info">
+                  <span className="event-date">Date: 15th November 2026</span>
+                  <span className="event-venue">Venue: East Cultural Association, Bengaluru</span>
+                  <span className="event-entry">Time: 9:00 AM - 5:00 PM IST</span>
+                </div>
+                
+                <div className="event-description">
+                  <h3>Annual Day Celebrations</h3>
+                  <p>
+                    Celebrate Kerala Engineers' Association Bangalore's Annual Day 2026 with vibrant activities, 
+                    cultural performances, and community gathering. Join us for a day filled with entertainment and celebration.
+                  </p>
+                  
+                  <div className="special-features">
+                    <h4>Event Highlights:</h4>
+                    <ul>
+                      <li>Pookalam Competition</li>
+                      <li>Traditional Dance Performances</li>
+                      <li>Grand Onam Sadhya</li>
+                      <li>Fashion Show</li>
+                      <li>Mega talent show</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <button className="register-btn" onClick={handleAnnualDay26Register}>
+                  Register Now
+                </button>
+              </div>
+            </div>
+          </div>
 
           <div className="event-card">
             <div className="event-image">
@@ -102,7 +149,7 @@ const Events = () => {
             </div>
           </div>
 
-          {/* Career Connect Event */}
+          {/* Career Connect Event
           <div className="event-card">
             <div className="event-image">
               <img src={CareerConnectImage} alt="Career Connect 2025" />
@@ -137,7 +184,7 @@ const Events = () => {
                 </button>
               </div>
             </div>
-          </div>
+          </div> */}
 
 
         </div>
