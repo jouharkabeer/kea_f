@@ -23,7 +23,7 @@ const Events = () => {
     <div className="events-page">
       <div className="events-container">
         <div className="events-header">
-          <h1>Upcoming Eventsz</h1>
+          <h1>Upcoming Events</h1>
           <p>Join us for these exciting upcoming events</p>
         </div>
 
