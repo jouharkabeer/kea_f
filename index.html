@@ -20,15 +20,6 @@
       return event;          // or return false to drop the event
     },
   });
-
-  try {
-  await checkout();
-} catch (err) {
-  LogcoreRUM.addError(err, { step: "payment" });   // handled errors
-}
-
-LogcoreRUM.addAction("checkout completed", { items: 3 });
-console.log("support session:", LogcoreRUM.getSessionId());
 </script>
 
   </head>
