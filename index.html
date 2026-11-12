@@ -5,6 +5,32 @@
     <link rel="icon" type="image/svg+xml" href="/KEAcolor.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KEA Bengaluru</title>
+
+    <script src="https://logcore.lsofito.com/rum.js"></script>
+<script>
+  LogcoreRUM.init({
+    clientToken: "lcrum_xxxxxxxxxxxxxxxx",
+    env: "production",
+    version: "1.4.2",
+    sessionSampleRate: 100,
+    allowedTracingUrls: ["https://api.example.com"],
+    beforeSend(event) {
+      // Remove e-mail addresses from URLs before they leave the browser.
+      event.url = event.url.replace(/email=[^&]+/, "email=REDACTED");
+      return event;          // or return false to drop the event
+    },
+  });
+
+  try {
+  await checkout();
+} catch (err) {
+  LogcoreRUM.addError(err, { step: "payment" });   // handled errors
+}
+
+LogcoreRUM.addAction("checkout completed", { items: 3 });
+console.log("support session:", LogcoreRUM.getSessionId());
+</script>
+
   </head>
   <body>
     <div id="root"></div>
